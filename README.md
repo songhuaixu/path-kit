@@ -1,7 +1,7 @@
 # path-kit
 
-基于 Skia PathKit 的 Rust 路径运算库，提供 safe 的 API 封装。  
-A Rust path operations library based on Skia PathKit with safe API wrappers.
+基于 Skia PathOps 和 PathKit 的 Rust 路径运算库，提供 safe 的 API 封装。  
+A Rust path operations library based on Skia PathOps and PathKit with safe API wrappers.
 
 ## 功能 / Features
 
