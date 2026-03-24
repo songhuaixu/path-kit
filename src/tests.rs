@@ -7,6 +7,28 @@ fn rect(l: f32, t: f32, r: f32, b: f32) -> Rect {
 }
 
 #[test]
+fn path_fill_type_default_and_set() {
+    let path = Path::new();
+    assert_eq!(path.fill_type(), PathFillType::Winding);
+    assert!(!path.is_inverse_fill_type());
+
+    let mut p = Path::new();
+    p.set_fill_type(PathFillType::EvenOdd);
+    assert_eq!(p.fill_type(), PathFillType::EvenOdd);
+    assert!(p.fill_type().is_even_odd());
+    assert!(!p.is_inverse_fill_type());
+
+    p.toggle_inverse_fill_type();
+    assert_eq!(p.fill_type(), PathFillType::InverseEvenOdd);
+    assert!(p.is_inverse_fill_type());
+    p.toggle_inverse_fill_type();
+    assert_eq!(p.fill_type(), PathFillType::EvenOdd);
+
+    assert_eq!(PathFillType::InverseWinding.to_non_inverse(), PathFillType::Winding);
+    assert_eq!(PathFillType::InverseEvenOdd.to_non_inverse(), PathFillType::EvenOdd);
+}
+
+#[test]
 fn path_empty() {
     let path = Path::new();
     assert_eq!(path.count_points(), 0);

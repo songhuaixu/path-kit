@@ -64,6 +64,7 @@ fn main() {
         .allowlist_type("pk::SkPathOp")
         .allowlist_type("pk::SkOpBuilder")
         .allowlist_type("pk::SkPathDirection")
+        .allowlist_type("pk::SkPathFillType")
         .allowlist_type("pk::SkScalar")
         .allowlist_type("pk::SkPathMeasure")
         .allowlist_type("pk::SkDashPathEffect")

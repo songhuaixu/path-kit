@@ -2,6 +2,7 @@
 //! Path type representing 2D contours built from move, line, quad, cubic, and close verbs.
 
 use crate::direction::Direction;
+use crate::path_fill_type::PathFillType;
 use crate::path_iter::PathIter;
 use crate::pathkit;
 use crate::point::Point;
@@ -117,10 +118,31 @@ impl Path {
 
     /// 是否包含点。Returns true if (x, y) is inside the filled path.
     ///
-    /// 使用 SkPath 当前 fill type（默认 even-odd）。
-    /// Uses SkPath's current fill type (default even-odd).
+    /// 使用当前 [`fill_type`](Self::fill_type)（新建路径默认为 [`PathFillType::Winding`]）。
+    /// Uses current [`fill_type`](Self::fill_type) (new paths default to [`PathFillType::Winding`]).
     pub fn contains(&self, x: f32, y: f32) -> bool {
         unsafe { self.inner.contains(x, y) }
+    }
+
+    /// 当前填充规则。Current fill rule.
+    pub fn fill_type(&self) -> PathFillType {
+        PathFillType::from_sk_bits(self.inner.fFillType())
+    }
+
+    /// 设置填充规则。Sets fill rule.
+    pub fn set_fill_type(&mut self, ft: PathFillType) {
+        self.inner.set_fFillType(pathkit::SkPathFillType::Type::from(ft) as u8);
+    }
+
+    /// 是否为反色填充（`InverseWinding` / `InverseEvenOdd`）。
+    pub fn is_inverse_fill_type(&self) -> bool {
+        self.fill_type().is_inverse()
+    }
+
+    /// 在「普通 / 反色」之间切换（`Winding` ↔ `InverseWinding`，`EvenOdd` ↔ `InverseEvenOdd`）。
+    pub fn toggle_inverse_fill_type(&mut self) {
+        let v = self.inner.fFillType();
+        self.inner.set_fFillType((v ^ 2) & 3);
     }
 
     // ---------- 构建方法 / Construction methods ----------
@@ -294,6 +316,7 @@ impl Clone for Path {
 impl std::fmt::Debug for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Path")
+            .field("fill_type", &self.fill_type())
             .field("points", &self.count_points())
             .field("verbs", &self.count_verbs())
             .field("bounds", &self.tight_bounds())

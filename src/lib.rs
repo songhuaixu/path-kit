@@ -32,6 +32,7 @@
 //! | [`Direction`] | 绘制方向 Cw/Ccw |
 //! | [`RectCorner`] | 矩形起始角 |
 //! | [`PathOp`] | 布尔运算类型 |
+//! | [`PathFillType`] | 路径填充规则（winding / even-odd / inverse） |
 //! | [`PathVerbItem`] | 路径迭代项 |
 //! | [`PathMeasure`] | 路径测量（长度、位置、切线、段提取） |
 //! | [`StrokeRec`] | 描边参数 |
@@ -163,6 +164,7 @@ mod ops;
 mod path;
 mod path_iter;
 mod path_measure;
+mod path_fill_type;
 mod path_op;
 mod point;
 mod rect;
@@ -177,6 +179,7 @@ pub use direction::Direction;
 pub use op_builder::OpBuilder;
 pub use ops::{path_op, pathops_tight_bounds, simplify};
 pub use path::Path;
+pub use path_fill_type::PathFillType;
 pub use path_iter::{PathIter, PathVerb, PathVerbItem};
 pub use path_measure::PathMeasure;
 pub use path_op::PathOp;
