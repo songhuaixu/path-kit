@@ -7,6 +7,8 @@ description = "Rust path operations library based on Skia PathOps and PathKit - 
 license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://github.com/songhuaixu/path-kit"
+documentation = "https://docs.rs/path-kit"
+homepage = "https://github.com/songhuaixu/path-kit/blob/master/CHANGELOG.md"
 keywords = ["path", "skia", "vector", "graphics", "boolean"]
 categories = ["graphics", "mathematics"]
 
