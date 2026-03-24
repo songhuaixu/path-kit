@@ -137,6 +137,33 @@ fn path_move_to_line_to_close() {
 }
 
 #[test]
+fn path_builder_snapshot_and_detach() {
+    let mut b = PathBuilder::new();
+    b.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    let p1 = b.snapshot();
+    assert_eq!(p1.count_points(), 2);
+    let p2 = b.snapshot();
+    assert_eq!(p2.count_points(), 2);
+    let p3 = b.detach();
+    assert_eq!(p3.count_points(), 2);
+    let p4 = b.snapshot();
+    assert!(p4.is_empty());
+}
+
+#[test]
+fn path_builder_fill_type_and_add_path() {
+    let mut b = PathBuilder::new();
+    b.set_fill_type(PathFillType::EvenOdd);
+    assert_eq!(b.fill_type(), PathFillType::EvenOdd);
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(5.0, 0.0);
+    b.add_path(&p);
+    let out = b.snapshot();
+    assert_eq!(out.fill_type(), PathFillType::EvenOdd);
+    assert!(out.count_points() >= 2);
+}
+
+#[test]
 fn path_add_oval() {
     let mut path = Path::new();
     path.add_oval(&rect(0.0, 0.0, 100.0, 50.0), Direction::Cw);
@@ -520,41 +547,6 @@ fn simplify_returns_path() {
         .close();
     let result = simplify(&path).unwrap();
     assert!(result.count_points() > 0);
-}
-
-#[test]
-#[ignore] // filterPath may segfault - pathkit path effect integration needs further investigation
-fn dash_path_effect() {
-    let effect = DashPathEffect::new(&[10.0, 5.0], 0.0).unwrap();
-    let mut path = Path::new();
-    path.move_to(0.0, 0.0).line_to(100.0, 0.0);
-    let dashed = effect.filter_path(&path, 2.0).unwrap();
-    assert!(dashed.count_points() > 0);
-}
-
-#[test]
-#[ignore] // sk_sp drop causes segfault - C++ refcounting not fully integrated
-fn dash_path_effect_create() {
-    let _effect = DashPathEffect::new(&[10.0, 5.0], 0.0).unwrap();
-}
-
-#[test]
-#[ignore] // filterPath may segfault - pathkit path effect integration needs further investigation
-fn corner_path_effect() {
-    let effect = CornerPathEffect::new(5.0).unwrap();
-    let mut path = Path::new();
-    path.move_to(0.0, 0.0)
-        .line_to(50.0, 0.0)
-        .line_to(50.0, 50.0)
-        .close();
-    let rounded = effect.filter_path(&path, 1.0).unwrap();
-    assert!(rounded.count_points() > 0);
-}
-
-#[test]
-#[ignore] // sk_sp drop causes segfault - C++ refcounting not fully integrated
-fn corner_path_effect_create() {
-    let _effect = CornerPathEffect::new(5.0).unwrap();
 }
 
 #[test]

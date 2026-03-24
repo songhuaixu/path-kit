@@ -1,6 +1,6 @@
 //! 二维点 (x, y)。2D point with x and y coordinates.
 
-use crate::pathkit;
+use crate::bridge::ffi;
 
 /// 二维点。A 2D point with x and y coordinates.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -18,14 +18,17 @@ impl Point {
     }
 }
 
-impl From<Point> for pathkit::SkPoint {
+impl From<Point> for ffi::Point {
     fn from(p: Point) -> Self {
-        pathkit::SkPoint { fX: p.x, fY: p.y }
+        ffi::Point {
+            fX: p.x,
+            fY: p.y,
+        }
     }
 }
 
-impl From<pathkit::SkPoint> for Point {
-    fn from(p: pathkit::SkPoint) -> Self {
+impl From<ffi::Point> for Point {
+    fn from(p: ffi::Point) -> Self {
         Self { x: p.fX, y: p.fY }
     }
 }

@@ -5,8 +5,8 @@
 //!
 //! ## 功能 / Features
 //!
-//! - **路径构建**：线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect（四角独立半径）
-//!   Path construction: lines, quadratic/cubic bezier, rect, oval, circle, round rect, RRect (per-corner radii)
+//! - **路径构建**：[`Path`]、[`PathBuilder`]；线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect
+//!   Path construction: [`Path`], [`PathBuilder`]; lines, quad/cubic bezier, rect, oval, circle, round rect, RRect
 //! - **路径布尔运算**：并集、交集、差集、异或
 //!   Path boolean operations: union, intersect, difference, xor
 //! - **路径简化、包围盒**：`simplify`, `path.tight_bounds`, `pathops_tight_bounds`
@@ -26,6 +26,7 @@
 //! | 类型 | 说明 |
 //! |------|------|
 //! | [`Path`] | 路径 |
+//! | [`PathBuilder`] | 路径构建器（`SkPathBuilder`，支持 `snapshot` / `detach`） |
 //! | [`Rect`] | 矩形 |
 //! | [`RRect`] | 圆角矩形（支持四角独立半径） |
 //! | [`Point`] | 二维点 |
@@ -33,13 +34,17 @@
 //! | [`RectCorner`] | 矩形起始角 |
 //! | [`PathOp`] | 布尔运算类型 |
 //! | [`PathFillType`] | 路径填充规则（winding / even-odd / inverse） |
-//! | [`PathVerbItem`] | 路径迭代项 |
+//! | [`PathVerb`] / [`PathVerbItem`] | 路径动词枚举 / 迭代项 |
 //! | [`PathMeasure`] | 路径测量（长度、位置、切线、段提取） |
-//! | [`StrokeRec`] | 描边参数 |
+//! | [`OpBuilder`] | 批量路径布尔运算（`SkOpBuilder`） |
+//! | [`path_op`] / [`simplify`] / [`pathops_tight_bounds`] | 两路径布尔运算、简化、pathops 紧密包围盒 |
+//! | [`StrokeRec`] / [`StrokeStyle`] | 描边参数与当前样式快照 |
 //! | [`StrokeCap`] | 线端样式 Butt/Round/Square |
 //! | [`StrokeJoin`] | 转角样式 Miter/Round/Bevel |
 //! | [`Paint`] | 绘图参数（含 Style、Stroke） |
 //! | [`PaintStyle`] | 绘图样式 Fill/Stroke/StrokeAndFill |
+//! | [`CornerPathEffect`] / [`DashPathEffect`] | 圆角 / 虚线路径效果 |
+//! | [`RRectType`] | 圆角矩形分类（与 `SkRRect::Type` 一致） |
 //!
 //! ## 示例 / Examples
 //!
@@ -147,45 +152,54 @@
 //! let bounds = pathops_tight_bounds(&path).unwrap();  // or path.tight_bounds() for infallible
 //! ```
 
-/// PathKit（Skia PathOps）FFI 绑定（仅内部使用，不对外暴露）。
-/// PathKit (Skia PathOps) FFI bindings (internal only, not exposed to external users).
+/// PathKit（Skia PathOps）与 C++ 的 cxx 桥接（仅内部使用）。
+/// PathKit C++ interop via cxx (internal only).
 #[doc(hidden)]
-#[allow(warnings)]
-mod pathkit {
-    pub use root::pk::*;
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-}
+pub(crate) mod bridge;
 
 mod corner_path_effect;
 mod dash_path_effect;
-mod direction;
 mod op_builder;
 mod ops;
 mod path;
+mod path_builder;
 mod path_iter;
 mod path_measure;
 mod path_fill_type;
-mod path_op;
 mod point;
 mod rect;
-mod rect_corner;
 mod rrect;
 mod paint;
 mod stroke_rec;
 
+pub use bridge::ffi::Direction;
+pub use bridge::ffi::PathOp;
+pub use bridge::ffi::RectCorner;
+pub use bridge::ffi::RRectType;
+
+impl Default for Direction {
+    fn default() -> Self {
+        Self::Cw
+    }
+}
+
+impl Default for RectCorner {
+    fn default() -> Self {
+        Self::UpperLeft
+    }
+}
+
 pub use corner_path_effect::CornerPathEffect;
 pub use dash_path_effect::DashPathEffect;
-pub use direction::Direction;
 pub use op_builder::OpBuilder;
 pub use ops::{path_op, pathops_tight_bounds, simplify};
 pub use path::Path;
+pub use path_builder::PathBuilder;
 pub use path_fill_type::PathFillType;
 pub use path_iter::{PathIter, PathVerb, PathVerbItem};
 pub use path_measure::PathMeasure;
-pub use path_op::PathOp;
 pub use point::Point;
 pub use rect::Rect;
-pub use rect_corner::RectCorner;
 pub use rrect::{Radii, RRect};
 pub use paint::{Paint, PaintStyle};
 pub use stroke_rec::{StrokeCap, StrokeJoin, StrokeRec, StrokeStyle};

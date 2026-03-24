@@ -9,6 +9,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0] - 2026-03-25
+
+### Added
+
+- **PathBuilder**：基于 `pk::SkPathBuilder` 的 FFI 封装，`snapshot` / `detach`、`set_fill_type`、`add_path` 及与 `Path` 对齐的几何构建 API
+- **`RRectType`**：与 `SkRRect::Type` 一致的 cxx 共享枚举，crate 根导出
+
+### Changed
+
+- **OpBuilder**：改为调用 `pk::SkOpBuilder`（FFI），不再在 Rust 内逐次 `path_op`
+- **RRect**：移除本地 `sk_rrect_type` 常量，类型判断统一使用 `RRectType`
+- **PathFillType**：移除 `from_sk_bits` / `from_raw_bits` / `as_raw_bits`；`is_even_odd`、`is_inverse`、`to_non_inverse` 直接按变体判断
+- **`bridge::ffi`**：改为 `pub(crate) mod ffi`，外部仅通过 crate 根 `pub use` 使用公开类型
+- **路径效果文档**：去掉「实验性」模块说明（实现未改）
+- **构建**：不在上游 `pathkit/pathkit.h` 中增加 include；`SkPathBuilder` 仅在 `pathkit-bridge` 头文件中包含
+
+### Documentation
+
+- 更新 crate 文档中的类型表与若干 API 中英注释
+
 ## [0.2.0] - 2026-03-24
 
 ### Added

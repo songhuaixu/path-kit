@@ -1,28 +1,15 @@
 //! 绘图参数。Paint parameters for path stroking/filling.
 
+use crate::bridge::ffi;
 use crate::path::Path;
 use crate::stroke_rec::{StrokeCap, StrokeJoin};
-use crate::pathkit;
+use cxx::UniquePtr;
 
-/// 绘图样式。Paint style - fill, stroke, or both.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum PaintStyle {
-    /// 填充 / Fill
-    #[default]
-    Fill = 0,
-    /// 描边 / Stroke
-    Stroke = 1,
-    /// 描边并填充 / Stroke and fill
-    StrokeAndFill = 2,
-}
+pub use crate::bridge::ffi::PaintStyle;
 
-impl From<PaintStyle> for pathkit::SkPaint_Style::Type {
-    fn from(s: PaintStyle) -> Self {
-        match s {
-            PaintStyle::Fill => pathkit::SkPaint_Style::kFill_Style,
-            PaintStyle::Stroke => pathkit::SkPaint_Style::kStroke_Style,
-            PaintStyle::StrokeAndFill => pathkit::SkPaint_Style::kStrokeAndFill_Style,
-        }
+impl Default for PaintStyle {
+    fn default() -> Self {
+        PaintStyle::Fill
     }
 }
 
@@ -32,64 +19,50 @@ impl From<PaintStyle> for pathkit::SkPaint_Style::Type {
 /// 用于 `get_fill_path` 将路径转换为描边后的填充路径（类似 StrokeRec，但包含 Style）。
 /// Used with `get_fill_path` to convert path to stroked fill path (like StrokeRec, but includes Style).
 pub struct Paint {
-    inner: pathkit::SkPaint,
+    inner: UniquePtr<ffi::PaintHolder>,
 }
 
 impl Paint {
     /// 创建默认绘图参数（填充样式）。Creates default paint (fill style).
     pub fn new() -> Self {
         Self {
-            inner: unsafe { pathkit::SkPaint::new() },
+            inner: ffi::paint_new(),
         }
     }
 
     /// 设置为填充样式。Sets to fill style.
     pub fn set_fill(&mut self) {
-        unsafe {
-            self.inner.setStyle(pathkit::SkPaint_Style::kFill_Style);
-        }
+        ffi::paint_set_fill(self.inner.pin_mut());
     }
 
     /// 设置为描边样式。Sets to stroke style.
     pub fn set_stroke(&mut self, enable: bool) {
-        unsafe {
-            self.inner.setStroke(enable);
-        }
+        ffi::paint_set_stroke(self.inner.pin_mut(), enable);
     }
 
     /// 设置绘图样式。Sets paint style.
     pub fn set_style(&mut self, style: PaintStyle) {
-        unsafe {
-            self.inner.setStyle(style.into());
-        }
+        ffi::paint_set_style(self.inner.pin_mut(), style);
     }
 
     /// 设置描边宽度。Sets stroke width (0 = hairline).
     pub fn set_stroke_width(&mut self, width: f32) {
-        unsafe {
-            self.inner.setStrokeWidth(width);
-        }
+        ffi::paint_set_stroke_width(self.inner.pin_mut(), width);
     }
 
     /// 设置 Miter 限制。Sets miter limit for sharp corners.
     pub fn set_stroke_miter(&mut self, miter: f32) {
-        unsafe {
-            self.inner.setStrokeMiter(miter);
-        }
+        ffi::paint_set_stroke_miter(self.inner.pin_mut(), miter);
     }
 
     /// 设置线端样式。Sets line cap.
     pub fn set_stroke_cap(&mut self, cap: StrokeCap) {
-        unsafe {
-            self.inner.setStrokeCap(cap.into());
-        }
+        ffi::paint_set_stroke_cap(self.inner.pin_mut(), cap);
     }
 
     /// 设置转角连接样式。Sets line join.
     pub fn set_stroke_join(&mut self, join: StrokeJoin) {
-        unsafe {
-            self.inner.setStrokeJoin(join.into());
-        }
+        ffi::paint_set_stroke_join(self.inner.pin_mut(), join);
     }
 
     /// 将路径转为填充等效路径。
@@ -99,14 +72,11 @@ impl Paint {
     /// Fill style returns copy of path; stroke style returns stroked fill path.
     pub fn get_fill_path(&self, path: &Path) -> Option<Path> {
         let mut dst = Path::new();
-        let ok = unsafe {
-            self.inner.getFillPath(
-                path.as_raw() as *const _,
-                dst.as_raw_mut() as *mut _,
-                std::ptr::null(),
-                1.0,
-            )
-        };
+        let ok = ffi::paint_get_fill_path(
+            self.inner.as_ref().expect("Paint"),
+            path.as_raw(),
+            dst.as_raw_pin_mut(),
+        );
         if ok {
             Some(dst)
         } else {
@@ -114,15 +84,9 @@ impl Paint {
         }
     }
 
-    /// 内部 SkPaint 引用（仅 crate 内使用）。Internal use only.
-    pub(crate) fn as_raw(&self) -> &pathkit::SkPaint {
-        &self.inner
-    }
-
-    /// 内部 SkPaint 可变引用（仅 crate 内使用）。Internal use only.
-    #[allow(dead_code)]
-    pub(crate) fn as_raw_mut(&mut self) -> &mut pathkit::SkPaint {
-        &mut self.inner
+    /// 内部引用（仅 crate 内使用）。Internal use only.
+    pub(crate) fn as_holder_ref(&self) -> &ffi::PaintHolder {
+        self.inner.as_ref().expect("Paint")
     }
 }
 
@@ -135,15 +99,7 @@ impl Default for Paint {
 impl Clone for Paint {
     fn clone(&self) -> Self {
         Self {
-            inner: unsafe { pathkit::SkPaint::new1(self.as_raw() as *const _) },
-        }
-    }
-}
-
-impl Drop for Paint {
-    fn drop(&mut self) {
-        unsafe {
-            self.inner.destruct();
+            inner: ffi::paint_clone(self.as_holder_ref()),
         }
     }
 }

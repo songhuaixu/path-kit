@@ -1,7 +1,7 @@
 //! 矩形，由 (left, top, right, bottom) 定义。
 //! Rectangle defined by (left, top, right, bottom) coordinates.
 
-use crate::pathkit;
+use crate::bridge::ffi;
 
 /// 矩形，由 (left, top, right, bottom) 定义。
 /// Rectangle defined by (left, top, right, bottom) coordinates.
@@ -44,9 +44,9 @@ impl Rect {
     }
 }
 
-impl From<Rect> for pathkit::SkRect {
+impl From<Rect> for ffi::Rect {
     fn from(r: Rect) -> Self {
-        pathkit::SkRect {
+        ffi::Rect {
             fLeft: r.left,
             fTop: r.top,
             fRight: r.right,
@@ -55,8 +55,8 @@ impl From<Rect> for pathkit::SkRect {
     }
 }
 
-impl From<pathkit::SkRect> for Rect {
-    fn from(r: pathkit::SkRect) -> Self {
+impl From<ffi::Rect> for Rect {
+    fn from(r: ffi::Rect) -> Self {
         Self {
             left: r.fLeft,
             top: r.fTop,

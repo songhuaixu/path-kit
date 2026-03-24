@@ -1,27 +1,13 @@
 //! 路径迭代器。Path iterator over verbs and points.
 
+use crate::bridge::ffi;
 use crate::path::Path;
 use crate::point::Point;
-use crate::pathkit;
+use cxx::UniquePtr;
 
-/// 路径动词，描述路径中的每个图元。Path verb - describes each element in the path.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathVerb {
-    /// 移动到新轮廓起点 / Move to start new contour
-    Move,
-    /// 直线 / Line segment
-    Line,
-    /// 二次贝塞尔 / Quadratic bezier
-    Quad,
-    /// 圆锥曲线（有理二次）/ Conic (rational quadratic)
-    Conic,
-    /// 三次贝塞尔 / Cubic bezier
-    Cubic,
-    /// 闭合轮廓 / Close contour
-    Close,
-    /// 迭代结束 / Iteration done
-    Done,
-}
+/// 路径动词，与 `pk::SkPath::Verb` 一致。
+/// Path verb, matches `pk::SkPath::Verb`.
+pub use crate::bridge::ffi::PathVerb;
 
 /// 单步迭代结果，含动词与关联点。Single iteration result with verb and points.
 #[derive(Debug, Clone)]
@@ -57,25 +43,24 @@ impl PathVerbItem {
 /// 路径迭代器，按动词顺序遍历路径。Path iterator over verbs and points.
 pub struct PathIter<'a> {
     _path: &'a Path,
-    inner: pathkit::SkPath_Iter,
-    pts: [pathkit::SkPoint; 4],
+    inner: UniquePtr<ffi::PathIterInner>,
+    p0: ffi::Point,
+    p1: ffi::Point,
+    p2: ffi::Point,
+    p3: ffi::Point,
 }
 
 impl<'a> PathIter<'a> {
     pub(crate) fn new(path: &'a Path, force_close: bool) -> Self {
-        let inner = unsafe {
-            pathkit::SkPath_Iter::new1(path.as_raw() as *const _, force_close)
-        };
-        let pts = [
-            pathkit::SkPoint { fX: 0.0, fY: 0.0 },
-            pathkit::SkPoint { fX: 0.0, fY: 0.0 },
-            pathkit::SkPoint { fX: 0.0, fY: 0.0 },
-            pathkit::SkPoint { fX: 0.0, fY: 0.0 },
-        ];
+        let inner = ffi::path_iter_new(path.as_raw(), force_close);
+        let z = ffi::Point { fX: 0.0, fY: 0.0 };
         Self {
             _path: path,
             inner,
-            pts,
+            p0: z,
+            p1: z,
+            p2: z,
+            p3: z,
         }
     }
 }
@@ -84,30 +69,25 @@ impl<'a> Iterator for PathIter<'a> {
     type Item = PathVerbItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let verb = unsafe {
-            self.inner.next(self.pts.as_mut_ptr())
-        };
-        let v = verb as u32;
+        let v = ffi::path_iter_next(
+            self.inner.pin_mut(),
+            &mut self.p0,
+            &mut self.p1,
+            &mut self.p2,
+            &mut self.p3,
+        );
         let item = match v {
-            pathkit::SkPath_Verb::kMove_Verb => PathVerbItem::Move(self.pts[0].into()),
-            pathkit::SkPath_Verb::kLine_Verb => {
-                PathVerbItem::Line(self.pts[0].into(), self.pts[1].into())
-            }
-            pathkit::SkPath_Verb::kQuad_Verb => {
-                PathVerbItem::Quad(self.pts[1].into(), self.pts[2].into())
-            }
-            pathkit::SkPath_Verb::kConic_Verb => {
-                // SkPath::Iter 不暴露 conicWeight，用 1.0 近似（椭圆/圆多为 0.5，此处简化）
-                // SkPath::Iter does not expose conicWeight; using 1.0 as approx (ellipse/circle often 0.5)
-                PathVerbItem::Conic(self.pts[1].into(), self.pts[2].into(), 1.0)
-            }
-            pathkit::SkPath_Verb::kCubic_Verb => PathVerbItem::Cubic(
-                self.pts[1].into(),
-                self.pts[2].into(),
-                self.pts[3].into(),
+            PathVerb::Move => PathVerbItem::Move(self.p0.into()),
+            PathVerb::Line => PathVerbItem::Line(self.p0.into(), self.p1.into()),
+            PathVerb::Quad => PathVerbItem::Quad(self.p1.into(), self.p2.into()),
+            PathVerb::Conic => PathVerbItem::Conic(self.p1.into(), self.p2.into(), 1.0),
+            PathVerb::Cubic => PathVerbItem::Cubic(
+                self.p1.into(),
+                self.p2.into(),
+                self.p3.into(),
             ),
-            pathkit::SkPath_Verb::kClose_Verb => PathVerbItem::Close,
-            pathkit::SkPath_Verb::kDone_Verb => return None,
+            PathVerb::Close => PathVerbItem::Close,
+            PathVerb::Done => return None,
             _ => return None,
         };
         Some(item)
