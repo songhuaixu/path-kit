@@ -37,6 +37,22 @@ fn main() {
     }
     build.compile("pathkit");
 
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
+
+    match (target_os.as_str(), target_env.as_str()) {
+        ("linux", _) | ("windows", "gnu") | ("android", _) => {
+            println!("cargo:rustc-link-lib=dylib=stdc++");
+        }
+        ("macos", _) | ("ios", _) => println!("cargo:rustc-link-lib=dylib=c++"),
+        ("windows", "msvc") => {}
+        _ => unimplemented!(
+            "target_os: {}, target_env: {}",
+            target_os.as_str(),
+            target_env.as_str()
+        ),
+    }
+
     // bindgen 直接从 C++ 头文件生成绑定
     let bindings = bindgen::Builder::default()
         .header(pathkit.join("pathkit.h").to_str().unwrap())
