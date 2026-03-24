@@ -20,7 +20,7 @@ A Rust path operations library based on Skia PathOps and PathKit with safe API w
 
 ```toml
 [dependencies]
-path-kit = "0.1"
+path-kit = "0.2"
 ```
 
 ## 示例 / Examples
