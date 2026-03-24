@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- **PathMeasure**：SkPathMeasure safe 封装，`length`, `pos_tan`, `get_segment`, `set_path`, `is_closed`, `next_contour`
+- **描边样式**：`StrokeCap`（Butt, Round, Square）, `StrokeJoin`（Miter, Round, Bevel）
+- **描边参数**：`StrokeRec::set_cap`, `set_join`, `set_stroke_params`, `cap`, `join`, `miter_limit`
+- **Paint**：SkPaint safe 封装，`PaintStyle`（Fill/Stroke/StrokeAndFill）
+- **Paint 方法**：`set_style`, `set_stroke_width`, `set_stroke_cap`, `set_stroke_join`, `set_stroke_miter`, `get_fill_path`
+
+---
+
 ## [0.1.0] - 2025-03-24
 
 ### Added

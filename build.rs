@@ -2,7 +2,6 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=pathkit/pathkit.h");
     println!("cargo:rerun-if-changed=pathkit/include");
     println!("cargo:rerun-if-changed=pathkit/src");
@@ -60,6 +59,7 @@ fn main() {
         .allowlist_function("SkDashPathEffect_Make")
         .allowlist_function("SkCornerPathEffect_Make")
         .allowlist_type("pk::SkPathEffect")
+        .allowlist_type("pk::SkPaint")
         .allowlist_type("pk::SkStrokeRec")
         .allowlist_file(".*pathops.*")
         .blocklist_type("std::.*")
@@ -79,6 +79,7 @@ fn main() {
         .constified_enum_module("pk::SkPathEffect_DashType")
         .constified_enum_module("pk::SkPaint_Cap")
         .constified_enum_module("pk::SkPaint_Join")
+        .constified_enum_module("pk::SkPaint_Style")
         .constified_enum_module("pk::SkContourMeasure_MatrixFlags")
         .constified_enum_module("pk::SkPathMeasure_MatrixFlags")
         .enable_cxx_namespaces()

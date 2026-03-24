@@ -33,7 +33,12 @@
 //! | [`RectCorner`] | 矩形起始角 |
 //! | [`PathOp`] | 布尔运算类型 |
 //! | [`PathVerbItem`] | 路径迭代项 |
+//! | [`PathMeasure`] | 路径测量（长度、位置、切线、段提取） |
 //! | [`StrokeRec`] | 描边参数 |
+//! | [`StrokeCap`] | 线端样式 Butt/Round/Square |
+//! | [`StrokeJoin`] | 转角样式 Miter/Round/Bevel |
+//! | [`Paint`] | 绘图参数（含 Style、Stroke） |
+//! | [`PaintStyle`] | 绘图样式 Fill/Stroke/StrokeAndFill |
 //!
 //! ## 示例 / Examples
 //!
@@ -110,6 +115,20 @@
 //! let stroked = rec.apply_to_path(&path).unwrap();
 //! ```
 //!
+//! ### 路径测量 / Path measure
+//!
+//! ```rust
+//! use path_kit::{Path, PathMeasure};
+//!
+//! let mut path = Path::new();
+//! path.move_to(0.0, 0.0).line_to(100.0, 0.0);
+//! let mut measure = PathMeasure::from_path(&path, false, 1.0);
+//! let len = measure.length();           // ~100
+//! let (pos, tan) = measure.pos_tan(50.0).unwrap();  // position & tangent at midpoint
+//! let mut segment = Path::new();
+//! measure.get_segment(25.0, 75.0, &mut segment, true);  // extract sub-path
+//! ```
+//!
 //! ### 路径简化与包围盒 / Simplify and bounds
 //!
 //! ```rust
@@ -143,11 +162,13 @@ mod op_builder;
 mod ops;
 mod path;
 mod path_iter;
+mod path_measure;
 mod path_op;
 mod point;
 mod rect;
 mod rect_corner;
 mod rrect;
+mod paint;
 mod stroke_rec;
 
 pub use corner_path_effect::CornerPathEffect;
@@ -157,12 +178,14 @@ pub use op_builder::OpBuilder;
 pub use ops::{path_op, pathops_tight_bounds, simplify};
 pub use path::Path;
 pub use path_iter::{PathIter, PathVerb, PathVerbItem};
+pub use path_measure::PathMeasure;
 pub use path_op::PathOp;
 pub use point::Point;
 pub use rect::Rect;
 pub use rect_corner::RectCorner;
 pub use rrect::{Radii, RRect};
-pub use stroke_rec::{StrokeRec, StrokeStyle};
+pub use paint::{Paint, PaintStyle};
+pub use stroke_rec::{StrokeCap, StrokeJoin, StrokeRec, StrokeStyle};
 
 #[cfg(test)]
 mod tests;

@@ -537,7 +537,8 @@ fn corner_path_effect_create() {
 
 #[test]
 fn stroke_rec_apply_to_path() {
-    let rec = StrokeRec::new_stroke(4.0, false);
+    let mut rec = StrokeRec::new_stroke(4.0, false);
+    rec.set_stroke_params(StrokeCap::Round, StrokeJoin::Round, 2.0);
     let mut path = Path::new();
     path.move_to(0.0, 0.0).line_to(100.0, 0.0);
     let stroked = rec.apply_to_path(&path).unwrap();
@@ -573,9 +574,102 @@ fn stroke_rec_inflation_radius() {
 }
 
 #[test]
+fn stroke_rec_cap_join() {
+    let mut rec = StrokeRec::new_stroke(4.0, false);
+    assert_eq!(rec.cap(), StrokeCap::Butt);
+    assert_eq!(rec.join(), StrokeJoin::Miter);
+
+    rec.set_cap(StrokeCap::Round);
+    rec.set_join(StrokeJoin::Round);
+    assert_eq!(rec.cap(), StrokeCap::Round);
+    assert_eq!(rec.join(), StrokeJoin::Round);
+
+    rec.set_stroke_params(StrokeCap::Square, StrokeJoin::Bevel, 2.0);
+    assert_eq!(rec.cap(), StrokeCap::Square);
+    assert_eq!(rec.join(), StrokeJoin::Bevel);
+    assert!((rec.miter_limit() - 2.0).abs() < 0.001);
+
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(50.0, 0.0);
+    let stroked = rec.apply_to_path(&path).unwrap();
+    assert!(stroked.count_points() > 0);
+}
+
+#[test]
 fn dash_path_effect_invalid() {
     assert!(DashPathEffect::new(&[], 0.0).is_none());
     assert!(DashPathEffect::new(&[10.0], 0.0).is_none()); // odd count
+}
+
+#[test]
+fn paint_get_fill_path() {
+    let mut paint = Paint::new();
+    paint.set_style(PaintStyle::Stroke);
+    paint.set_stroke_width(4.0);
+    paint.set_stroke_cap(StrokeCap::Round);
+    paint.set_stroke_join(StrokeJoin::Round);
+
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(50.0, 0.0);
+    let filled = paint.get_fill_path(&path).unwrap();
+    assert!(filled.count_points() > 0);
+}
+
+#[test]
+fn paint_fill_returns_copy() {
+    let paint = Paint::new(); // default fill
+    let mut path = Path::new();
+    path.add_rect(&rect(10.0, 10.0, 50.0, 50.0), Direction::Cw, RectCorner::UpperLeft);
+    let result = paint.get_fill_path(&path).unwrap();
+    assert_eq!(result.count_points(), path.count_points());
+}
+
+#[test]
+fn path_measure_length() {
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(100.0, 0.0);
+    let mut measure = PathMeasure::from_path(&path, false, 1.0);
+    let len = measure.length();
+    assert!((len - 100.0).abs() < 0.01);
+}
+
+#[test]
+fn path_measure_pos_tan() {
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(100.0, 0.0);
+    let mut measure = PathMeasure::from_path(&path, false, 1.0);
+    let (pos, tan) = measure.pos_tan(50.0).unwrap();
+    assert!((pos.x - 50.0).abs() < 0.01);
+    assert!((pos.y - 0.0).abs() < 0.01);
+    assert!((tan.x - 1.0).abs() < 0.01); // tangent along +x
+    assert!((tan.y - 0.0).abs() < 0.01);
+}
+
+#[test]
+fn path_measure_get_segment() {
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(100.0, 0.0);
+    let mut measure = PathMeasure::from_path(&path, false, 1.0);
+    let mut dst = Path::new();
+    let ok = measure.get_segment(25.0, 75.0, &mut dst, true);
+    assert!(ok);
+    assert!(dst.count_points() > 0);
+}
+
+#[test]
+fn path_measure_empty() {
+    let mut measure = PathMeasure::new();
+    assert!(measure.length().abs() < 0.001);
+    assert!(measure.pos_tan(0.0).is_none());
+}
+
+#[test]
+fn path_measure_set_path() {
+    let mut path = Path::new();
+    path.move_to(0.0, 0.0).line_to(50.0, 0.0);
+    let mut measure = PathMeasure::new();
+    measure.set_path(&path, false);
+    assert!((measure.length() - 50.0).abs() < 0.01);
 }
 
 #[test]

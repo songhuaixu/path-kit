@@ -3,6 +3,70 @@
 use crate::path::Path;
 use crate::pathkit;
 
+/// 线端样式。Line cap style - how stroke ends are drawn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StrokeCap {
+    /// 平头 / Butt (no cap)
+    #[default]
+    Butt = 0,
+    /// 圆头 / Round cap
+    Round = 1,
+    /// 方头 / Square cap
+    Square = 2,
+}
+
+/// 转角连接样式。Line join style - how stroke corners are drawn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StrokeJoin {
+    /// 尖角 / Miter join (sharp)
+    #[default]
+    Miter = 0,
+    /// 圆角 / Round join
+    Round = 1,
+    /// 斜切 / Bevel join
+    Bevel = 2,
+}
+
+impl From<StrokeCap> for pathkit::SkPaint_Cap::Type {
+    fn from(c: StrokeCap) -> Self {
+        match c {
+            StrokeCap::Butt => pathkit::SkPaint_Cap::kButt_Cap,
+            StrokeCap::Round => pathkit::SkPaint_Cap::kRound_Cap,
+            StrokeCap::Square => pathkit::SkPaint_Cap::kSquare_Cap,
+        }
+    }
+}
+
+impl From<u32> for StrokeCap {
+    fn from(v: u32) -> Self {
+        match v {
+            1 => StrokeCap::Round,
+            2 => StrokeCap::Square,
+            _ => StrokeCap::Butt,
+        }
+    }
+}
+
+impl From<StrokeJoin> for pathkit::SkPaint_Join::Type {
+    fn from(j: StrokeJoin) -> Self {
+        match j {
+            StrokeJoin::Miter => pathkit::SkPaint_Join::kMiter_Join,
+            StrokeJoin::Round => pathkit::SkPaint_Join::kRound_Join,
+            StrokeJoin::Bevel => pathkit::SkPaint_Join::kBevel_Join,
+        }
+    }
+}
+
+impl From<u32> for StrokeJoin {
+    fn from(v: u32) -> Self {
+        match v {
+            1 => StrokeJoin::Round,
+            2 => StrokeJoin::Bevel,
+            _ => StrokeJoin::Miter,
+        }
+    }
+}
+
 /// 描边样式。Stroke style.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeStyle {
@@ -72,6 +136,38 @@ impl StrokeRec {
         unsafe {
             self.inner.setStrokeStyle(width, stroke_and_fill);
         }
+    }
+
+    /// 设置线端样式。Sets line cap (Butt, Round, Square).
+    pub fn set_cap(&mut self, cap: StrokeCap) {
+        self.inner.set_fCap(cap as u32);
+    }
+
+    /// 设置转角连接样式。Sets line join (Miter, Round, Bevel).
+    pub fn set_join(&mut self, join: StrokeJoin) {
+        self.inner.set_fJoin(join as u32);
+    }
+
+    /// 设置描边端点与转角参数。Sets cap, join, and miter limit.
+    pub fn set_stroke_params(&mut self, cap: StrokeCap, join: StrokeJoin, miter_limit: f32) {
+        self.inner.set_fCap(cap as u32);
+        self.inner.set_fJoin(join as u32);
+        self.inner.fMiterLimit = miter_limit;
+    }
+
+    /// 线端样式。Returns line cap.
+    pub fn cap(&self) -> StrokeCap {
+        StrokeCap::from(self.inner.fCap())
+    }
+
+    /// 转角连接样式。Returns line join.
+    pub fn join(&self) -> StrokeJoin {
+        StrokeJoin::from(self.inner.fJoin())
+    }
+
+    /// Miter 限制（尖角最长延伸比）。Returns miter limit.
+    pub fn miter_limit(&self) -> f32 {
+        self.inner.fMiterLimit
     }
 
     /// 当前样式。Returns current style (hairline/fill/stroke).
