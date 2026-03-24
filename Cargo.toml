@@ -7,7 +7,7 @@ description = "Rust path operations library based on Skia PathKit - union, inter
 license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://github.com/songhuaixu/path-kit"
-keywords = ["path", "skia", "vector", "graphics", "boolean", "union", "intersect"]
+keywords = ["path", "skia", "vector", "graphics", "boolean"]
 categories = ["graphics", "mathematics"]
 
 [dependencies]
