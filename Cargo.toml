@@ -1,6 +1,6 @@
 [package]
 name = "path-kit"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["songhuaixu <songhuaixu@gmail.com>"]
 description = "Rust path operations library based on Skia PathOps and PathKit - union, intersect, simplify, stroke, RRect"

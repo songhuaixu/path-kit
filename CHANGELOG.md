@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+
+---
+
+## [0.2.0] - 2026-03-24
+
 ### Added
 
 - **PathMeasure**：SkPathMeasure safe 封装，`length`, `pos_tan`, `get_segment`, `set_path`, `is_closed`, `next_contour`
@@ -16,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.0] - 2025-03-24
+## [0.1.0] - 2026-03-24
 
 ### Added
 
