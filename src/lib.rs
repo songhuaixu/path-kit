@@ -11,6 +11,8 @@
 //!   Path boolean operations: union, intersect, difference, xor
 //! - **路径简化、包围盒**：`simplify`, `path.tight_bounds`, `pathops_tight_bounds`
 //!   Path simplification and tight bounds computation
+//! - **路径变换**：[`Path::transform`]、[`Path::transformed`]、[`Matrix`]（`SkMatrix`）
+//!   Affine/perspective transform via [`Path::transform`], [`Path::transformed`], [`Matrix`]
 //! - **路径迭代**：按动词遍历 Move/Line/Quad/Cubic/Close
 //!   Path iteration over verbs and points
 //! - **描边**：将路径转为描边轮廓
@@ -30,6 +32,7 @@
 //! | [`Rect`] | 矩形 |
 //! | [`RRect`] | 圆角矩形（支持四角独立半径） |
 //! | [`Point`] | 二维点 |
+//! | [`Matrix`] / [`ScaleToFit`] / [`matrix_type`] / [`coeff`] | 3×3 变换矩阵（`SkMatrix`）、`ScaleToFit`、类型位常量、系数下标 |
 //! | [`Direction`] | 绘制方向 Cw/Ccw |
 //! | [`RectCorner`] | 矩形起始角 |
 //! | [`PathOp`] | 布尔运算类型 |
@@ -166,6 +169,7 @@ mod path_builder;
 mod path_iter;
 mod path_measure;
 mod path_fill_type;
+mod matrix;
 mod point;
 mod rect;
 mod rrect;
@@ -193,6 +197,7 @@ pub use corner_path_effect::CornerPathEffect;
 pub use dash_path_effect::DashPathEffect;
 pub use op_builder::OpBuilder;
 pub use ops::{path_op, pathops_tight_bounds, simplify};
+pub use matrix::{Matrix, ScaleToFit, coeff, matrix_type};
 pub use path::Path;
 pub use path_builder::PathBuilder;
 pub use path_fill_type::PathFillType;

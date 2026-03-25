@@ -63,6 +63,266 @@ fn path_reset() {
 }
 
 #[test]
+fn path_rewind_points_verbs_line_oval_interpolate_swap() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    assert_eq!(p.points().len(), p.count_points() as usize);
+    assert_eq!(p.verbs().len(), p.count_verbs() as usize);
+    assert_eq!(p.last_pt(), Some(Point::new(10.0, 0.0)));
+    assert_ne!(p.segment_masks(), 0);
+
+    p.rewind();
+    assert!(p.is_empty());
+
+    let mut a = Path::new();
+    a.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    let mut b = Path::new();
+    b.move_to(0.0, 0.0).line_to(20.0, 0.0);
+    assert!(a.is_interpolatable_with(&b));
+    let mid = a.try_interpolate(&b, 0.5).expect("interpolate");
+    assert!(mid.last_pt().is_some());
+
+    let mut line = Path::new();
+    line.move_to(1.0, 2.0).line_to(3.0, 4.0);
+    let l = line.is_line().expect("single segment");
+    assert!((l.0.x - 1.0).abs() < 0.001);
+    assert!((l.1.y - 4.0).abs() < 0.001);
+
+    let mut oval_path = Path::new();
+    oval_path.add_circle(0.0, 0.0, 10.0, Direction::Cw);
+    assert!(oval_path.is_oval().is_some());
+
+    let mut poly = Path::new();
+    poly.add_poly(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(10.0, 10.0),
+        ],
+        true,
+    );
+    assert!(poly.count_verbs() >= 4);
+
+    let mut x = Path::new();
+    x.move_to(0.0, 0.0);
+    let mut y = Path::new();
+    y.move_to(1.0, 1.0);
+    x.swap(&mut y);
+    assert_eq!(x.last_pt(), Some(Point::new(1.0, 1.0)));
+    assert_eq!(y.last_pt(), Some(Point::new(0.0, 0.0)));
+}
+
+#[test]
+fn matrix_type_mask_constants() {
+    use crate::matrix::matrix_type as ty;
+    assert_eq!(ty::IDENTITY, 0);
+    assert_eq!(ty::TRANSLATE, 1);
+    assert_eq!(ty::SCALE, 2);
+    assert_eq!(ty::AFFINE, 4);
+    assert_eq!(ty::PERSPECTIVE, 8);
+}
+
+#[test]
+fn matrix_concat_invert_map_memory_roundtrip() {
+    let mut t = Matrix::translate(3.0, 4.0);
+    t.pre_scale(2.0, 2.0);
+    assert!(!t.is_identity());
+    assert!(t.is_scale_translate());
+
+    let p = t.map_xy(1.0, 0.0);
+    assert!((p.x - 5.0).abs() < 0.001);
+    assert!((p.y - 4.0).abs() < 0.001);
+
+    let inv = t.try_inverse().expect("invertible");
+    let q = inv.map_point(p);
+    assert!((q.x - 1.0).abs() < 0.01);
+    assert!((q.y - 0.0).abs() < 0.01);
+
+    let mut buf = [0u8; 64];
+    let n = t.write_to_memory(&mut buf);
+    assert_eq!(n, 9 * 4);
+    let mut t2 = Matrix::identity();
+    assert_eq!(t2.read_from_memory(&buf[..n]), n);
+
+    let (_, _) = t.map_rect(&rect(0.0, 0.0, 1.0, 1.0));
+}
+
+#[test]
+fn matrix_set_rect_to_rect_fill() {
+    let mut m = Matrix::identity();
+    let ok = m.set_rect_to_rect(
+        &rect(0.0, 0.0, 100.0, 50.0),
+        &rect(0.0, 0.0, 200.0, 100.0),
+        ScaleToFit::Fill,
+    );
+    assert!(ok);
+    let p = m.map_xy(100.0, 50.0);
+    assert!((p.x - 200.0).abs() < 0.1);
+    assert!((p.y - 100.0).abs() < 0.1);
+}
+
+#[test]
+fn path_transform_translate_updates_points() {
+    let mut p = Path::new();
+    p.move_to(1.0, 2.0).line_to(3.0, 4.0);
+    let t = Matrix::translate(10.0, 20.0);
+    p.transform(&t);
+    assert_eq!(p.get_point(0), Some(Point::new(11.0, 22.0)));
+    assert_eq!(p.last_pt(), Some(Point::new(13.0, 24.0)));
+}
+
+#[test]
+fn path_transformed_leaves_original_unchanged() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(1.0, 0.0);
+    let t = Matrix::translate(5.0, 6.0);
+    let q = p.transformed(&t);
+    assert_eq!(p.last_pt(), Some(Point::new(1.0, 0.0)));
+    assert_eq!(q.last_pt(), Some(Point::new(6.0, 6.0)));
+}
+
+#[test]
+fn path_transform_identity_unchanged() {
+    let mut p = Path::new();
+    p.move_to(1.0, 0.0).line_to(2.0, 3.0);
+    let before = p.points();
+    p.transform(&Matrix::identity());
+    assert_eq!(p.points(), before);
+}
+
+#[test]
+fn path_transform_scale_doubles_horizontal_segment() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    p.transform(&Matrix::scale(2.0, 2.0));
+    assert_eq!(p.last_pt(), Some(Point::new(20.0, 0.0)));
+}
+
+#[test]
+fn path_bounds_is_finite_and_convex_for_closed_rect() {
+    let mut p = Path::new();
+    p.add_rect(&rect(10.0, 20.0, 90.0, 70.0), Direction::Cw, RectCorner::UpperLeft);
+    assert!(p.is_finite());
+    assert!(p.is_convex());
+    let b = p.bounds();
+    assert!((b.left - 10.0).abs() < 2.0);
+    assert!((b.right - 90.0).abs() < 2.0);
+    let t = p.tight_bounds();
+    assert!((b.width() - t.width()).abs() < 3.0);
+}
+
+#[test]
+fn path_try_interpolate_returns_none_when_incompatible() {
+    let mut a = Path::new();
+    a.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    let mut b = Path::new();
+    b.move_to(0.0, 0.0)
+        .line_to(10.0, 0.0)
+        .line_to(10.0, 10.0);
+    assert!(!a.is_interpolatable_with(&b));
+    assert!(a.try_interpolate(&b, 0.5).is_none());
+}
+
+#[test]
+fn path_set_last_pt_on_empty_and_nonempty() {
+    let mut p = Path::new();
+    p.set_last_pt(5.0, 6.0);
+    assert_eq!(p.last_pt(), Some(Point::new(5.0, 6.0)));
+    p.line_to(10.0, 10.0);
+    p.set_last_pt(7.0, 8.0);
+    assert_eq!(p.last_pt(), Some(Point::new(7.0, 8.0)));
+}
+
+#[test]
+fn path_has_multiple_contours_and_segment_mask_line() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(1.0, 0.0);
+    assert!(!p.has_multiple_contours());
+    p.move_to(10.0, 10.0).line_to(11.0, 10.0);
+    assert!(p.has_multiple_contours());
+    assert_ne!(p.segment_masks() & 1, 0);
+}
+
+#[test]
+fn path_points_match_get_point_order() {
+    let mut p = Path::new();
+    p.move_to(1.0, 2.0).quad_to(3.0, 4.0, 5.0, 6.0);
+    let pts = p.points();
+    for (i, q) in pts.iter().enumerate() {
+        assert_eq!(p.get_point(i as i32), Some(*q));
+    }
+}
+
+#[test]
+fn path_verbs_bytes_match_path_verb_enum() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).line_to(1.0, 0.0).close();
+    let v = p.verbs();
+    assert_eq!(v.len(), 3);
+    // 与 `pk::SkPathVerb` 一致：Move=0, Line=1, Close=5（同 `PathVerb` 判别值）
+    assert_eq!(v[0], 0);
+    assert_eq!(v[1], 1);
+    assert_eq!(v[2], 5);
+    assert!(matches!(
+        p.iter(false).next(),
+        Some(PathVerbItem::Move(_))
+    ));
+}
+
+#[test]
+fn path_add_path_offset_translates_appended_geometry() {
+    let mut dst = Path::new();
+    dst.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    let mut src = Path::new();
+    src.move_to(0.0, 0.0).line_to(0.0, 5.0);
+    dst.add_path_offset(&src, 100.0, 0.0, false);
+    assert_eq!(dst.last_pt(), Some(Point::new(100.0, 5.0)));
+}
+
+#[test]
+fn path_reverse_add_path_appends_something() {
+    let mut dst = Path::new();
+    dst.move_to(0.0, 0.0);
+    let mut src = Path::new();
+    src.move_to(1.0, 0.0).line_to(1.0, 2.0);
+    dst.reverse_add_path(&src);
+    assert!(dst.count_verbs() > src.count_verbs());
+}
+
+#[test]
+fn path_conic_weight_not_one_sets_quad_or_conic_mask() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0).conic_to(10.0, 10.0, 20.0, 0.0, 2.0);
+    let m = p.segment_masks();
+    assert!(m & (1 << 1) != 0 || m & (1 << 2) != 0);
+}
+
+#[test]
+fn path_arc_to_increases_verb_count() {
+    let mut p = Path::new();
+    p.move_to(0.0, 0.0);
+    let n0 = p.count_verbs();
+    p.arc_to(10.0, 0.0, 10.0, 10.0, 5.0);
+    assert!(p.count_verbs() > n0);
+}
+
+#[test]
+fn path_inc_reserve_does_not_break_append() {
+    let mut p = Path::new();
+    p.inc_reserve(64);
+    p.move_to(0.0, 0.0).line_to(1.0, 1.0);
+    assert_eq!(p.count_points(), 2);
+}
+
+#[test]
+fn path_add_oval_with_start_has_points() {
+    let mut p = Path::new();
+    p.add_oval_with_start(&rect(0.0, 0.0, 40.0, 20.0), Direction::Cw, RectCorner::UpperRight);
+    assert!(p.count_points() > 0);
+    assert!(p.tight_bounds().width() > 30.0);
+}
+
+#[test]
 fn path_iter_move_line_close() {
     let mut path = Path::new();
     path.move_to(0.0, 0.0)
@@ -119,6 +379,19 @@ fn path_iter_force_close() {
     path.move_to(0.0, 0.0).line_to(50.0, 0.0); // open contour
     let items: Vec<_> = path.iter(true).collect();
     assert!(items.iter().any(|i| matches!(i, PathVerbItem::Close)));
+}
+
+#[test]
+fn path_eq_same_geometry_and_fill() {
+    let mut a = Path::new();
+    a.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    let mut b = Path::new();
+    b.move_to(0.0, 0.0).line_to(10.0, 0.0);
+    assert_eq!(a, b);
+    assert_eq!(a, a.clone());
+    let mut c = Path::new();
+    c.move_to(0.0, 0.0).line_to(10.0, 1.0);
+    assert_ne!(a, c);
 }
 
 #[test]

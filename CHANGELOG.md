@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Matrix（`SkMatrix`）**：3×3 变换矩阵的 Rust 封装，经 pathkit-bridge 调用 `pk::SkMatrix`，与公开 API 语义对齐——`set_*` / `pre_*` / `post_*`、`set_rect_to_rect`（`ScaleToFit`）、`get_type`、各类 `is_*`、系数读写与 `invert` / `map_xy` / `map_rect` / `map_rect_scale_translate` / `map_origin`、`get_min_max_scales` 等、`write_to_memory` / `read_from_memory`、`PartialEq`（Skia 相等语义）、`Mul` 与 `Matrix::concat`
+- **Path**：`transform` / `transformed` 接受 `Matrix`，与 `SkPath::transform` / `makeTransform` 一致（依赖上述 FFI）
 
 ---
 

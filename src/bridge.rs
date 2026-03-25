@@ -277,6 +277,163 @@ pub(crate) mod ffi {
         #[cxx_name = "pk_path_toggle_inverse_fill_type"]
         fn path_toggle_inverse_fill_type(p: Pin<&mut Path>);
 
+        /// `SkPath::rewind`：清空几何但保留缓冲区。
+        #[cxx_name = "pk_path_rewind"]
+        fn path_rewind(p: Pin<&mut Path>);
+        /// `SkPath::getBounds`（控制点轴对齐包围盒，可能缓存）。
+        #[cxx_name = "pk_path_get_bounds"]
+        fn path_get_bounds(p: &Path, out: &mut Rect);
+        #[cxx_name = "pk_path_is_finite"]
+        fn path_is_finite(p: &Path) -> bool;
+        #[cxx_name = "pk_path_is_convex"]
+        fn path_is_convex(p: &Path) -> bool;
+        #[cxx_name = "pk_path_is_oval"]
+        fn path_is_oval(p: &Path, bounds: &mut Rect) -> bool;
+        #[cxx_name = "pk_path_is_line"]
+        fn path_is_line(p: &Path, p0: &mut Point, p1: &mut Point) -> bool;
+        #[cxx_name = "pk_path_get_points_copy"]
+        fn path_get_points_copy(p: &Path, out: &mut Vec<Point>);
+        #[cxx_name = "pk_path_get_verbs_copy"]
+        fn path_get_verbs_copy(p: &Path, out: &mut Vec<u8>);
+        #[cxx_name = "pk_path_inc_reserve"]
+        fn path_inc_reserve(p: Pin<&mut Path>, extra_pt_count: i32);
+        #[cxx_name = "pk_path_is_interpolatable"]
+        fn path_is_interpolatable(a: &Path, b: &Path) -> bool;
+        #[cxx_name = "pk_path_interpolate"]
+        fn path_interpolate(
+            start: &Path,
+            end: &Path,
+            weight: f32,
+            out: Pin<&mut Path>,
+        ) -> bool;
+        #[cxx_name = "pk_path_get_last_pt"]
+        fn path_get_last_pt(p: &Path, out: &mut Point) -> bool;
+        #[cxx_name = "pk_path_set_last_pt"]
+        fn path_set_last_pt(p: Pin<&mut Path>, x: f32, y: f32);
+        #[cxx_name = "pk_path_segment_masks"]
+        fn path_segment_masks(p: &Path) -> u32;
+        #[cxx_name = "pk_path_has_multiple_contours"]
+        fn path_has_multiple_contours(p: &Path) -> bool;
+        #[cxx_name = "pk_path_add_path_offset"]
+        fn path_add_path_offset(p: Pin<&mut Path>, src: &Path, dx: f32, dy: f32, extend: bool);
+        #[cxx_name = "pk_path_reverse_add_path"]
+        fn path_reverse_add_path(p: Pin<&mut Path>, src: &Path);
+
+        /// `SkPath::transform(matrix, this)`，就地变换。
+        #[cxx_name = "pk_path_transform"]
+        fn path_transform(p: Pin<&mut Path>, mat9: &[f32]);
+        /// `SkPath::transform(matrix, &dst)`，写入 `dst`。
+        #[cxx_name = "pk_path_transform_to"]
+        fn path_transform_to(src: &Path, mat9: &[f32], dst: Pin<&mut Path>);
+
+        // --- `pk::SkMatrix`（9 floats，get9 顺序）---
+        #[cxx_name = "pk_matrix_reset"]
+        fn matrix_reset(m: &mut [f32]);
+        #[cxx_name = "pk_matrix_set_all"]
+        fn matrix_set_all(
+            m: &mut [f32],
+            v0: f32,
+            v1: f32,
+            v2: f32,
+            v3: f32,
+            v4: f32,
+            v5: f32,
+            v6: f32,
+            v7: f32,
+            v8: f32,
+        );
+        #[cxx_name = "pk_matrix_set_translate"]
+        fn matrix_set_translate(m: &mut [f32], dx: f32, dy: f32);
+        #[cxx_name = "pk_matrix_set_scale"]
+        fn matrix_set_scale(m: &mut [f32], sx: f32, sy: f32);
+        #[cxx_name = "pk_matrix_set_scale_pivot"]
+        fn matrix_set_scale_pivot(m: &mut [f32], sx: f32, sy: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_set_rotate"]
+        fn matrix_set_rotate(m: &mut [f32], degrees: f32);
+        #[cxx_name = "pk_matrix_set_rotate_pivot"]
+        fn matrix_set_rotate_pivot(m: &mut [f32], degrees: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_set_sin_cos"]
+        fn matrix_set_sin_cos(m: &mut [f32], sin_v: f32, cos_v: f32);
+        #[cxx_name = "pk_matrix_set_sin_cos_pivot"]
+        fn matrix_set_sin_cos_pivot(m: &mut [f32], sin_v: f32, cos_v: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_set_skew"]
+        fn matrix_set_skew(m: &mut [f32], kx: f32, ky: f32);
+        #[cxx_name = "pk_matrix_set_skew_pivot"]
+        fn matrix_set_skew_pivot(m: &mut [f32], kx: f32, ky: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_set_scale_translate"]
+        fn matrix_set_scale_translate(m: &mut [f32], sx: f32, sy: f32, tx: f32, ty: f32);
+        #[cxx_name = "pk_matrix_set_concat"]
+        fn matrix_set_concat(out: &mut [f32], a: &[f32], b: &[f32]);
+        #[cxx_name = "pk_matrix_pre_translate"]
+        fn matrix_pre_translate(m: &mut [f32], dx: f32, dy: f32);
+        #[cxx_name = "pk_matrix_pre_scale"]
+        fn matrix_pre_scale(m: &mut [f32], sx: f32, sy: f32);
+        #[cxx_name = "pk_matrix_pre_scale_pivot"]
+        fn matrix_pre_scale_pivot(m: &mut [f32], sx: f32, sy: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_pre_rotate"]
+        fn matrix_pre_rotate(m: &mut [f32], degrees: f32);
+        #[cxx_name = "pk_matrix_pre_rotate_pivot"]
+        fn matrix_pre_rotate_pivot(m: &mut [f32], degrees: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_pre_skew"]
+        fn matrix_pre_skew(m: &mut [f32], kx: f32, ky: f32);
+        #[cxx_name = "pk_matrix_pre_skew_pivot"]
+        fn matrix_pre_skew_pivot(m: &mut [f32], kx: f32, ky: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_pre_concat"]
+        fn matrix_pre_concat(m: &mut [f32], other: &[f32]);
+        #[cxx_name = "pk_matrix_post_translate"]
+        fn matrix_post_translate(m: &mut [f32], dx: f32, dy: f32);
+        #[cxx_name = "pk_matrix_post_scale"]
+        fn matrix_post_scale(m: &mut [f32], sx: f32, sy: f32);
+        #[cxx_name = "pk_matrix_post_scale_pivot"]
+        fn matrix_post_scale_pivot(m: &mut [f32], sx: f32, sy: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_post_rotate"]
+        fn matrix_post_rotate(m: &mut [f32], degrees: f32);
+        #[cxx_name = "pk_matrix_post_rotate_pivot"]
+        fn matrix_post_rotate_pivot(m: &mut [f32], degrees: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_post_skew"]
+        fn matrix_post_skew(m: &mut [f32], kx: f32, ky: f32);
+        #[cxx_name = "pk_matrix_post_skew_pivot"]
+        fn matrix_post_skew_pivot(m: &mut [f32], kx: f32, ky: f32, px: f32, py: f32);
+        #[cxx_name = "pk_matrix_post_concat"]
+        fn matrix_post_concat(m: &mut [f32], other: &[f32]);
+        #[cxx_name = "pk_matrix_set_rect_to_rect"]
+        fn matrix_set_rect_to_rect(m: &mut [f32], src: &Rect, dst: &Rect, scale_to_fit: i32) -> bool;
+
+        #[cxx_name = "pk_matrix_get_type"]
+        fn matrix_get_type(m: &[f32]) -> u32;
+        #[cxx_name = "pk_matrix_is_identity"]
+        fn matrix_is_identity(m: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_is_scale_translate"]
+        fn matrix_is_scale_translate_matrix(m: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_rect_stays_rect"]
+        fn matrix_rect_stays_rect(m: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_has_perspective"]
+        fn matrix_has_perspective(m: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_is_finite_matrix"]
+        fn matrix_is_finite_matrix(m: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_invert"]
+        fn matrix_invert(src: &[f32], dst: &mut [f32]) -> bool;
+        #[cxx_name = "pk_matrix_map_xy"]
+        fn matrix_map_xy(m: &[f32], x: f32, y: f32, out: &mut Point);
+        #[cxx_name = "pk_matrix_map_rect"]
+        fn matrix_map_rect(m: &[f32], src: &Rect, dst: &mut Rect) -> bool;
+        #[cxx_name = "pk_matrix_map_rect_scale_translate"]
+        fn matrix_map_rect_scale_translate(m: &[f32], src: &Rect, dst: &mut Rect);
+        #[cxx_name = "pk_matrix_map_origin"]
+        fn matrix_map_origin(m: &[f32], out: &mut Point);
+        #[cxx_name = "pk_matrix_get_min_scale"]
+        fn matrix_get_min_scale(m: &[f32]) -> f32;
+        #[cxx_name = "pk_matrix_get_max_scale"]
+        fn matrix_get_max_scale(m: &[f32]) -> f32;
+        #[cxx_name = "pk_matrix_get_min_max_scales"]
+        fn matrix_get_min_max_scales(m: &[f32], min_s: &mut f32, max_s: &mut f32) -> bool;
+        #[cxx_name = "pk_matrix_equals"]
+        fn matrix_equals(a: &[f32], b: &[f32]) -> bool;
+        #[cxx_name = "pk_matrix_write_to_memory"]
+        fn matrix_write_to_memory(m: &[f32], buf: &mut [u8]) -> usize;
+        #[cxx_name = "pk_matrix_read_from_memory"]
+        fn matrix_read_from_memory(m: &mut [f32], buf: &[u8]) -> usize;
+
         /// moveTo。moveTo.
         #[cxx_name = "pk_path_move_to"]
         fn path_move_to(p: Pin<&mut Path>, x: f32, y: f32);
@@ -297,9 +454,22 @@ pub(crate) mod ffi {
             x3: f32,
             y3: f32,
         );
+        #[cxx_name = "pk_path_conic_to"]
+        fn path_conic_to(
+            p: Pin<&mut Path>,
+            x1: f32,
+            y1: f32,
+            x2: f32,
+            y2: f32,
+            w: f32,
+        );
+        #[cxx_name = "pk_path_arc_to"]
+        fn path_arc_to(p: Pin<&mut Path>, x1: f32, y1: f32, x2: f32, y2: f32, radius: f32);
         /// close。close.
         #[cxx_name = "pk_path_close"]
         fn path_close(p: Pin<&mut Path>);
+        #[cxx_name = "pk_path_add_poly"]
+        fn path_add_poly(p: Pin<&mut Path>, pts: &[Point], close: bool);
 
         /// addRect。addRect.
         #[cxx_name = "pk_path_add_rect"]
@@ -307,6 +477,13 @@ pub(crate) mod ffi {
         /// addOval。addOval.
         #[cxx_name = "pk_path_add_oval"]
         fn path_add_oval(p: Pin<&mut Path>, rect: &Rect, dir: Direction);
+        #[cxx_name = "pk_path_add_oval_start"]
+        fn path_add_oval_start(
+            p: Pin<&mut Path>,
+            rect: &Rect,
+            dir: Direction,
+            start: RectCorner,
+        );
         /// addCircle。addCircle.
         #[cxx_name = "pk_path_add_circle"]
         fn path_add_circle(p: Pin<&mut Path>, cx: f32, cy: f32, radius: f32, dir: Direction);
@@ -333,6 +510,10 @@ pub(crate) mod ffi {
         /// 若路径为 RRect 则写出。isRRect.
         #[cxx_name = "pk_path_is_rrect"]
         fn path_is_rrect(p: &Path, out: &mut RRect) -> bool;
+        /// 与 `SkPath::operator==` 相同：填充类型 + 动词/点/圆锥权重。
+        /// Same as `SkPath::operator==` (fill type, verbs, points, conic weights).
+        #[cxx_name = "pk_path_equals"]
+        fn path_equals(a: &Path, b: &Path) -> bool;
 
         /// 新建 `SkPathBuilder`。New path builder.
         #[cxx_name = "pk_path_builder_new"]

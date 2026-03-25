@@ -3,8 +3,11 @@
 #include "include/pathkit_cxx_decl.h"
 
 #include <cstdint>
+#include <cstring>
+#include <functional>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "pathkit.h"
 #include "rust/cxx.h"
@@ -70,6 +73,423 @@ std::unique_ptr<pk::SkPath> pk_path_clone(const pk::SkPath& p) {
 
 void pk_path_reset(pk::SkPath& p) {
     p.reset();
+}
+
+void pk_path_rewind(pk::SkPath& p) {
+    p.rewind();
+}
+
+void pk_path_get_bounds(const pk::SkPath& p, SkRect& out) {
+    out = from_native_rect(p.getBounds());
+}
+
+bool pk_path_is_finite(const pk::SkPath& p) {
+    return p.isFinite();
+}
+
+bool pk_path_is_convex(const pk::SkPath& p) {
+    return p.isConvex();
+}
+
+bool pk_path_is_oval(const pk::SkPath& p, SkRect& bounds) {
+    pk::SkRect nb{};
+    bool ok = p.isOval(&nb);
+    if (ok) {
+        bounds = from_native_rect(nb);
+    }
+    return ok;
+}
+
+bool pk_path_is_line(const pk::SkPath& p, SkPoint& p0, SkPoint& p1) {
+    pk::SkPoint line[2]{};
+    bool ok = p.isLine(line);
+    if (ok) {
+        p0.fX = line[0].fX;
+        p0.fY = line[0].fY;
+        p1.fX = line[1].fX;
+        p1.fY = line[1].fY;
+    }
+    return ok;
+}
+
+void pk_path_get_points_copy(const pk::SkPath& p, rust::Vec<SkPoint>& out) {
+    int n = p.countPoints();
+    out.clear();
+    if (n <= 0) {
+        return;
+    }
+    std::vector<pk::SkPoint> tmp(static_cast<size_t>(n));
+    int got = p.getPoints(tmp.data(), n);
+    out.reserve(static_cast<size_t>(got));
+    for (int i = 0; i < got; ++i) {
+        const auto& q = tmp[static_cast<size_t>(i)];
+        out.push_back(SkPoint{q.fX, q.fY});
+    }
+}
+
+void pk_path_get_verbs_copy(const pk::SkPath& p, rust::Vec<std::uint8_t>& out) {
+    int n = p.countVerbs();
+    out.clear();
+    if (n <= 0) {
+        return;
+    }
+    std::vector<std::uint8_t> tmp(static_cast<size_t>(n));
+    int got = p.getVerbs(tmp.data(), n);
+    out.reserve(static_cast<size_t>(got));
+    for (int i = 0; i < got; ++i) {
+        out.push_back(tmp[static_cast<size_t>(i)]);
+    }
+}
+
+void pk_path_inc_reserve(pk::SkPath& p, int32_t extra_pt_count) {
+    if (extra_pt_count > 0) {
+        p.incReserve(extra_pt_count);
+    }
+}
+
+bool pk_path_is_interpolatable(const pk::SkPath& a, const pk::SkPath& b) {
+    return a.isInterpolatable(b);
+}
+
+bool pk_path_interpolate(const pk::SkPath& start, const pk::SkPath& end, float weight, pk::SkPath& out) {
+    return start.interpolate(end, weight, &out);
+}
+
+bool pk_path_get_last_pt(const pk::SkPath& p, SkPoint& out) {
+    pk::SkPoint q{};
+    bool ok = p.getLastPt(&q);
+    if (ok) {
+        out.fX = q.fX;
+        out.fY = q.fY;
+    }
+    return ok;
+}
+
+void pk_path_set_last_pt(pk::SkPath& p, float x, float y) {
+    p.setLastPt(x, y);
+}
+
+std::uint32_t pk_path_segment_masks(const pk::SkPath& p) {
+    return p.getSegmentMasks();
+}
+
+bool pk_path_has_multiple_contours(const pk::SkPath& p) {
+    return p.hasMultipleContours();
+}
+
+void pk_path_add_path_offset(pk::SkPath& dst, const pk::SkPath& src, float dx, float dy, bool extend) {
+    dst.addPath(src, dx, dy,
+                extend ? pk::SkPath::kExtend_AddPathMode : pk::SkPath::kAppend_AddPathMode);
+}
+
+void pk_path_reverse_add_path(pk::SkPath& dst, const pk::SkPath& src) {
+    dst.reverseAddPath(src);
+}
+
+void pk_path_transform(pk::SkPath& p, rust::Slice<const float> mat9) {
+    if (mat9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix m;
+    m.set9(mat9.data());
+    p.transform(m);
+}
+
+void pk_path_transform_to(const pk::SkPath& src, rust::Slice<const float> mat9, pk::SkPath& dst) {
+    if (mat9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix m;
+    m.set9(mat9.data());
+    src.transform(m, &dst);
+}
+
+namespace {
+
+void matrix_rw(rust::Slice<float> m9, const std::function<void(pk::SkMatrix&)>& fn) {
+    if (m9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix m;
+    m.set9(m9.data());
+    fn(m);
+    m.get9(m9.data());
+}
+
+pk::SkMatrix matrix_ro(rust::Slice<const float> m9) {
+    pk::SkMatrix m;
+    if (m9.size() == 9) {
+        m.set9(m9.data());
+    }
+    return m;
+}
+
+}  // namespace
+
+void pk_matrix_reset(rust::Slice<float> m9) {
+    matrix_rw(m9, [](pk::SkMatrix& m) { m.reset(); });
+}
+
+void pk_matrix_set_all(rust::Slice<float> m9, float v0, float v1, float v2, float v3, float v4, float v5,
+                       float v6, float v7, float v8) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setAll(v0, v1, v2, v3, v4, v5, v6, v7, v8); });
+}
+
+void pk_matrix_set_translate(rust::Slice<float> m9, float dx, float dy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setTranslate(dx, dy); });
+}
+
+void pk_matrix_set_scale(rust::Slice<float> m9, float sx, float sy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setScale(sx, sy); });
+}
+
+void pk_matrix_set_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setScale(sx, sy, px, py); });
+}
+
+void pk_matrix_set_rotate(rust::Slice<float> m9, float degrees) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setRotate(degrees); });
+}
+
+void pk_matrix_set_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setRotate(degrees, px, py); });
+}
+
+void pk_matrix_set_sin_cos(rust::Slice<float> m9, float sin_v, float cos_v) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setSinCos(sin_v, cos_v); });
+}
+
+void pk_matrix_set_sin_cos_pivot(rust::Slice<float> m9, float sin_v, float cos_v, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setSinCos(sin_v, cos_v, px, py); });
+}
+
+void pk_matrix_set_skew(rust::Slice<float> m9, float kx, float ky) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setSkew(kx, ky); });
+}
+
+void pk_matrix_set_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setSkew(kx, ky, px, py); });
+}
+
+void pk_matrix_set_scale_translate(rust::Slice<float> m9, float sx, float sy, float tx, float ty) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.setScaleTranslate(sx, sy, tx, ty); });
+}
+
+void pk_matrix_set_concat(rust::Slice<float> out9, rust::Slice<const float> a9, rust::Slice<const float> b9) {
+    if (out9.size() != 9 || a9.size() != 9 || b9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix a;
+    pk::SkMatrix b;
+    a.set9(a9.data());
+    b.set9(b9.data());
+    pk::SkMatrix r;
+    r.setConcat(a, b);
+    r.get9(out9.data());
+}
+
+void pk_matrix_pre_translate(rust::Slice<float> m9, float dx, float dy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preTranslate(dx, dy); });
+}
+
+void pk_matrix_pre_scale(rust::Slice<float> m9, float sx, float sy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preScale(sx, sy); });
+}
+
+void pk_matrix_pre_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preScale(sx, sy, px, py); });
+}
+
+void pk_matrix_pre_rotate(rust::Slice<float> m9, float degrees) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preRotate(degrees); });
+}
+
+void pk_matrix_pre_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preRotate(degrees, px, py); });
+}
+
+void pk_matrix_pre_skew(rust::Slice<float> m9, float kx, float ky) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preSkew(kx, ky); });
+}
+
+void pk_matrix_pre_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.preSkew(kx, ky, px, py); });
+}
+
+void pk_matrix_pre_concat(rust::Slice<float> m9, rust::Slice<const float> o9) {
+    if (m9.size() != 9 || o9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix o;
+    o.set9(o9.data());
+    matrix_rw(m9, [&o](pk::SkMatrix& m) { m.preConcat(o); });
+}
+
+void pk_matrix_post_translate(rust::Slice<float> m9, float dx, float dy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postTranslate(dx, dy); });
+}
+
+void pk_matrix_post_scale(rust::Slice<float> m9, float sx, float sy) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postScale(sx, sy); });
+}
+
+void pk_matrix_post_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postScale(sx, sy, px, py); });
+}
+
+void pk_matrix_post_rotate(rust::Slice<float> m9, float degrees) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postRotate(degrees); });
+}
+
+void pk_matrix_post_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postRotate(degrees, px, py); });
+}
+
+void pk_matrix_post_skew(rust::Slice<float> m9, float kx, float ky) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postSkew(kx, ky); });
+}
+
+void pk_matrix_post_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py) {
+    matrix_rw(m9, [=](pk::SkMatrix& m) { m.postSkew(kx, ky, px, py); });
+}
+
+void pk_matrix_post_concat(rust::Slice<float> m9, rust::Slice<const float> o9) {
+    if (m9.size() != 9 || o9.size() != 9) {
+        return;
+    }
+    pk::SkMatrix o;
+    o.set9(o9.data());
+    matrix_rw(m9, [&o](pk::SkMatrix& m) { m.postConcat(o); });
+}
+
+bool pk_matrix_set_rect_to_rect(rust::Slice<float> m9, const SkRect& src, const SkRect& dst,
+                                std::int32_t scale_to_fit) {
+    if (m9.size() != 9) {
+        return false;
+    }
+    pk::SkMatrix m;
+    bool ok = m.setRectToRect(to_native_rect(src), to_native_rect(dst),
+                             static_cast<pk::SkMatrix::ScaleToFit>(scale_to_fit));
+    m.get9(m9.data());
+    return ok;
+}
+
+std::uint32_t pk_matrix_get_type(rust::Slice<const float> m9) {
+    return static_cast<std::uint32_t>(matrix_ro(m9).getType());
+}
+
+bool pk_matrix_is_identity(rust::Slice<const float> m9) {
+    return matrix_ro(m9).isIdentity();
+}
+
+bool pk_matrix_is_scale_translate(rust::Slice<const float> m9) {
+    return matrix_ro(m9).isScaleTranslate();
+}
+
+bool pk_matrix_rect_stays_rect(rust::Slice<const float> m9) {
+    return matrix_ro(m9).rectStaysRect();
+}
+
+bool pk_matrix_has_perspective(rust::Slice<const float> m9) {
+    return matrix_ro(m9).hasPerspective();
+}
+
+bool pk_matrix_is_finite_matrix(rust::Slice<const float> m9) {
+    return matrix_ro(m9).isFinite();
+}
+
+bool pk_matrix_invert(rust::Slice<const float> src9, rust::Slice<float> dst9) {
+    if (src9.size() != 9 || dst9.size() != 9) {
+        return false;
+    }
+    pk::SkMatrix m;
+    m.set9(src9.data());
+    pk::SkMatrix inv;
+    if (!m.invert(&inv)) {
+        return false;
+    }
+    inv.get9(dst9.data());
+    return true;
+}
+
+void pk_matrix_map_xy(rust::Slice<const float> m9, float x, float y, SkPoint& out) {
+    pk::SkPoint p = matrix_ro(m9).mapXY(x, y);
+    out.fX = p.fX;
+    out.fY = p.fY;
+}
+
+bool pk_matrix_map_rect(rust::Slice<const float> m9, const SkRect& src, SkRect& dst) {
+    pk::SkMatrix m = matrix_ro(m9);
+    pk::SkRect d{};
+    bool axis = m.mapRect(&d, to_native_rect(src));
+    dst = from_native_rect(d);
+    return axis;
+}
+
+void pk_matrix_map_rect_scale_translate(rust::Slice<const float> m9, const SkRect& src, SkRect& dst) {
+    pk::SkMatrix m = matrix_ro(m9);
+    pk::SkRect d{};
+    m.mapRectScaleTranslate(&d, to_native_rect(src));
+    dst = from_native_rect(d);
+}
+
+void pk_matrix_map_origin(rust::Slice<const float> m9, SkPoint& out) {
+    pk::SkPoint p = matrix_ro(m9).mapOrigin();
+    out.fX = p.fX;
+    out.fY = p.fY;
+}
+
+float pk_matrix_get_min_scale(rust::Slice<const float> m9) {
+    return matrix_ro(m9).getMinScale();
+}
+
+float pk_matrix_get_max_scale(rust::Slice<const float> m9) {
+    return matrix_ro(m9).getMaxScale();
+}
+
+bool pk_matrix_get_min_max_scales(rust::Slice<const float> m9, float& min_s, float& max_s) {
+    pk::SkScalar s[2]{};
+    if (!matrix_ro(m9).getMinMaxScales(s)) {
+        return false;
+    }
+    min_s = s[0];
+    max_s = s[1];
+    return true;
+}
+
+bool pk_matrix_equals(rust::Slice<const float> a9, rust::Slice<const float> b9) {
+    if (a9.size() != 9 || b9.size() != 9) {
+        return false;
+    }
+    pk::SkMatrix a;
+    pk::SkMatrix b;
+    a.set9(a9.data());
+    b.set9(b9.data());
+    return a == b;
+}
+
+std::size_t pk_matrix_write_to_memory(rust::Slice<const float> m9, rust::Slice<std::uint8_t> buf) {
+    if (m9.size() != 9) {
+        return 0;
+    }
+    constexpr std::size_t n = 9 * sizeof(float);
+    if (buf.size() < n) {
+        return 0;
+    }
+    std::memcpy(buf.data(), m9.data(), n);
+    return n;
+}
+
+std::size_t pk_matrix_read_from_memory(rust::Slice<float> m9, rust::Slice<const std::uint8_t> buf) {
+    if (m9.size() != 9) {
+        return 0;
+    }
+    constexpr std::size_t n = 9 * sizeof(float);
+    if (buf.size() < n) {
+        return 0;
+    }
+    std::memcpy(m9.data(), buf.data(), n);
+    return n;
 }
 
 int32_t pk_path_count_points(const pk::SkPath& p) {
@@ -141,8 +561,25 @@ void pk_path_cubic_to(pk::SkPath& p, float x1, float y1, float x2, float y2, flo
     p.cubicTo(x1, y1, x2, y2, x3, y3);
 }
 
+void pk_path_conic_to(pk::SkPath& p, float x1, float y1, float x2, float y2, float w) {
+    p.conicTo(x1, y1, x2, y2, w);
+}
+
+void pk_path_arc_to(pk::SkPath& p, float x1, float y1, float x2, float y2, float radius) {
+    p.arcTo(x1, y1, x2, y2, radius);
+}
+
 void pk_path_close(pk::SkPath& p) {
     p.close();
+}
+
+void pk_path_add_poly(pk::SkPath& p, rust::Slice<const SkPoint> pts, bool close) {
+    const int count = static_cast<int>(pts.size());
+    if (count <= 0) {
+        p.addPoly(nullptr, 0, close);
+        return;
+    }
+    p.addPoly(reinterpret_cast<const pk::SkPoint*>(pts.data()), count, close);
 }
 
 void pk_path_add_rect(pk::SkPath& p, const SkRect& rect, Direction dir, RectCorner start) {
@@ -153,6 +590,11 @@ void pk_path_add_rect(pk::SkPath& p, const SkRect& rect, Direction dir, RectCorn
 
 void pk_path_add_oval(pk::SkPath& p, const SkRect& rect, Direction dir) {
     p.addOval(to_native_rect(rect), static_cast<pk::SkPathDirection>(static_cast<std::uint32_t>(dir)));
+}
+
+void pk_path_add_oval_start(pk::SkPath& p, const SkRect& rect, Direction dir, RectCorner start) {
+    p.addOval(to_native_rect(rect), static_cast<pk::SkPathDirection>(static_cast<std::uint32_t>(dir)),
+              static_cast<std::uint32_t>(start));
 }
 
 void pk_path_add_circle(pk::SkPath& p, float cx, float cy, float radius, Direction dir) {
@@ -181,6 +623,10 @@ bool pk_path_is_rrect(const pk::SkPath& p, SkRRect& out) {
     bool ok = p.isRRect(&nr);
     out = from_native_rrect(nr);
     return ok;
+}
+
+bool pk_path_equals(const pk::SkPath& a, const pk::SkPath& b) {
+    return a == b;
 }
 
 std::unique_ptr<PathBuilderHolder> pk_path_builder_new() {

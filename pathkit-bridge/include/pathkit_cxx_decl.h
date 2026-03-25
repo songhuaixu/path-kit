@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 
@@ -57,6 +58,79 @@ struct PathBuilderHolder {
 std::unique_ptr<pk::SkPath> pk_path_new();
 std::unique_ptr<pk::SkPath> pk_path_clone(const pk::SkPath& p);
 void pk_path_reset(pk::SkPath& p);
+void pk_path_rewind(pk::SkPath& p);
+
+void pk_path_get_bounds(const pk::SkPath& p, SkRect& out);
+bool pk_path_is_finite(const pk::SkPath& p);
+bool pk_path_is_convex(const pk::SkPath& p);
+bool pk_path_is_oval(const pk::SkPath& p, SkRect& bounds);
+bool pk_path_is_line(const pk::SkPath& p, SkPoint& p0, SkPoint& p1);
+void pk_path_get_points_copy(const pk::SkPath& p, rust::Vec<SkPoint>& out);
+void pk_path_get_verbs_copy(const pk::SkPath& p, rust::Vec<std::uint8_t>& out);
+void pk_path_inc_reserve(pk::SkPath& p, std::int32_t extra_pt_count);
+bool pk_path_is_interpolatable(const pk::SkPath& a, const pk::SkPath& b);
+bool pk_path_interpolate(const pk::SkPath& start, const pk::SkPath& end, float weight, pk::SkPath& out);
+bool pk_path_get_last_pt(const pk::SkPath& p, SkPoint& out);
+void pk_path_set_last_pt(pk::SkPath& p, float x, float y);
+std::uint32_t pk_path_segment_masks(const pk::SkPath& p);
+bool pk_path_has_multiple_contours(const pk::SkPath& p);
+void pk_path_add_path_offset(pk::SkPath& dst, const pk::SkPath& src, float dx, float dy, bool extend);
+void pk_path_reverse_add_path(pk::SkPath& dst, const pk::SkPath& src);
+
+void pk_path_transform(pk::SkPath& p, rust::Slice<const float> mat9);
+void pk_path_transform_to(const pk::SkPath& src, rust::Slice<const float> mat9, pk::SkPath& dst);
+
+// SkMatrix 桥接：9 个 float 为 SkMatrix::get9 顺序。
+void pk_matrix_reset(rust::Slice<float> m9);
+void pk_matrix_set_all(rust::Slice<float> m9, float v0, float v1, float v2, float v3, float v4, float v5,
+                       float v6, float v7, float v8);
+void pk_matrix_set_translate(rust::Slice<float> m9, float dx, float dy);
+void pk_matrix_set_scale(rust::Slice<float> m9, float sx, float sy);
+void pk_matrix_set_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py);
+void pk_matrix_set_rotate(rust::Slice<float> m9, float degrees);
+void pk_matrix_set_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py);
+void pk_matrix_set_sin_cos(rust::Slice<float> m9, float sin_v, float cos_v);
+void pk_matrix_set_sin_cos_pivot(rust::Slice<float> m9, float sin_v, float cos_v, float px, float py);
+void pk_matrix_set_skew(rust::Slice<float> m9, float kx, float ky);
+void pk_matrix_set_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py);
+void pk_matrix_set_scale_translate(rust::Slice<float> m9, float sx, float sy, float tx, float ty);
+void pk_matrix_set_concat(rust::Slice<float> out9, rust::Slice<const float> a9, rust::Slice<const float> b9);
+void pk_matrix_pre_translate(rust::Slice<float> m9, float dx, float dy);
+void pk_matrix_pre_scale(rust::Slice<float> m9, float sx, float sy);
+void pk_matrix_pre_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py);
+void pk_matrix_pre_rotate(rust::Slice<float> m9, float degrees);
+void pk_matrix_pre_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py);
+void pk_matrix_pre_skew(rust::Slice<float> m9, float kx, float ky);
+void pk_matrix_pre_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py);
+void pk_matrix_pre_concat(rust::Slice<float> m9, rust::Slice<const float> o9);
+void pk_matrix_post_translate(rust::Slice<float> m9, float dx, float dy);
+void pk_matrix_post_scale(rust::Slice<float> m9, float sx, float sy);
+void pk_matrix_post_scale_pivot(rust::Slice<float> m9, float sx, float sy, float px, float py);
+void pk_matrix_post_rotate(rust::Slice<float> m9, float degrees);
+void pk_matrix_post_rotate_pivot(rust::Slice<float> m9, float degrees, float px, float py);
+void pk_matrix_post_skew(rust::Slice<float> m9, float kx, float ky);
+void pk_matrix_post_skew_pivot(rust::Slice<float> m9, float kx, float ky, float px, float py);
+void pk_matrix_post_concat(rust::Slice<float> m9, rust::Slice<const float> o9);
+bool pk_matrix_set_rect_to_rect(rust::Slice<float> m9, const SkRect& src, const SkRect& dst,
+                                std::int32_t scale_to_fit);
+
+std::uint32_t pk_matrix_get_type(rust::Slice<const float> m9);
+bool pk_matrix_is_identity(rust::Slice<const float> m9);
+bool pk_matrix_is_scale_translate(rust::Slice<const float> m9);
+bool pk_matrix_rect_stays_rect(rust::Slice<const float> m9);
+bool pk_matrix_has_perspective(rust::Slice<const float> m9);
+bool pk_matrix_is_finite_matrix(rust::Slice<const float> m9);
+bool pk_matrix_invert(rust::Slice<const float> src9, rust::Slice<float> dst9);
+void pk_matrix_map_xy(rust::Slice<const float> m9, float x, float y, SkPoint& out);
+bool pk_matrix_map_rect(rust::Slice<const float> m9, const SkRect& src, SkRect& dst);
+void pk_matrix_map_rect_scale_translate(rust::Slice<const float> m9, const SkRect& src, SkRect& dst);
+void pk_matrix_map_origin(rust::Slice<const float> m9, SkPoint& out);
+float pk_matrix_get_min_scale(rust::Slice<const float> m9);
+float pk_matrix_get_max_scale(rust::Slice<const float> m9);
+bool pk_matrix_get_min_max_scales(rust::Slice<const float> m9, float& min_s, float& max_s);
+bool pk_matrix_equals(rust::Slice<const float> a9, rust::Slice<const float> b9);
+std::size_t pk_matrix_write_to_memory(rust::Slice<const float> m9, rust::Slice<std::uint8_t> buf);
+std::size_t pk_matrix_read_from_memory(rust::Slice<float> m9, rust::Slice<const std::uint8_t> buf);
 
 std::int32_t pk_path_count_points(const pk::SkPath& p);
 std::int32_t pk_path_count_verbs(const pk::SkPath& p);
@@ -74,15 +148,20 @@ void pk_path_move_to(pk::SkPath& p, float x, float y);
 void pk_path_line_to(pk::SkPath& p, float x, float y);
 void pk_path_quad_to(pk::SkPath& p, float x1, float y1, float x2, float y2);
 void pk_path_cubic_to(pk::SkPath& p, float x1, float y1, float x2, float y2, float x3, float y3);
+void pk_path_conic_to(pk::SkPath& p, float x1, float y1, float x2, float y2, float w);
+void pk_path_arc_to(pk::SkPath& p, float x1, float y1, float x2, float y2, float radius);
 void pk_path_close(pk::SkPath& p);
+void pk_path_add_poly(pk::SkPath& p, rust::Slice<const SkPoint> pts, bool close);
 
 void pk_path_add_rect(pk::SkPath& p, const SkRect& rect, Direction dir, RectCorner start);
 void pk_path_add_oval(pk::SkPath& p, const SkRect& rect, Direction dir);
+void pk_path_add_oval_start(pk::SkPath& p, const SkRect& rect, Direction dir, RectCorner start);
 void pk_path_add_circle(pk::SkPath& p, float cx, float cy, float radius, Direction dir);
 void pk_path_add_round_rect(pk::SkPath& p, const SkRect& rect, float rx, float ry, Direction dir);
 void pk_path_add_rrect(pk::SkPath& p, const SkRRect& rr, Direction dir);
 void pk_path_add_rrect_start(pk::SkPath& p, const SkRRect& rr, Direction dir, RectCorner start);
 bool pk_path_is_rrect(const pk::SkPath& p, SkRRect& out);
+bool pk_path_equals(const pk::SkPath& a, const pk::SkPath& b);
 
 std::unique_ptr<PathBuilderHolder> pk_path_builder_new();
 void pk_path_builder_reset(PathBuilderHolder& h);
