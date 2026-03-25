@@ -1,0 +1,3 @@
+[submodule "pathkit"]
+	path = pathkit
+	url = https://github.com/libpag/pathkit.git
