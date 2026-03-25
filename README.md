@@ -5,16 +5,28 @@ A Rust path operations library based on Skia PathOps and PathKit with safe API w
 
 ## 功能 / Features
 
-- **路径构建**：线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect（四角独立半径）
-- **路径布尔运算**：并集、交集、差集、异或
-- **路径简化、包围盒**：`simplify`, `path.tight_bounds`, `pathops_tight_bounds`
+- **路径构建**：`Path`、`PathBuilder`（`SkPathBuilder`，`snapshot` / `detach`）；线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect（四角独立半径）
+- **路径布尔运算**：并集、交集、差集、异或；`OpBuilder` 批量运算（底层 `SkOpBuilder`）
+- **路径简化、包围盒**：`simplify`，`path.tight_bounds`，`pathops_tight_bounds`
+- **路径变换**：`Matrix`（与 `SkMatrix` 公开 API 对齐）、`path.transform` / `path.transformed`
+- **路径填充**：`PathFillType`（winding / even-odd / inverse 等）
+- **路径测量**：`PathMeasure`（长度、`pos_tan`、`get_segment` 等）
 - **路径迭代**：按动词遍历 Move/Line/Quad/Cubic/Close
-- **描边**：将路径转为描边轮廓
+- **描边**：`StrokeRec`、`StrokeCap` / `StrokeJoin`；将路径转为描边轮廓
+- **绘图参数**：`Paint`、`PaintStyle`（`get_fill_path` 等，与 SkPaint 对齐的封装）
+- **路径效果**：`DashPathEffect`、`CornerPathEffect`（`SkPathEffect::filterPath` 封装，用于虚线 / 圆角等）
+
+英文对照：same as above, plus `DashPathEffect` / `CornerPathEffect` wrapping Skia path effects.
+
+## 文档 / Documentation
+
+- [docs.rs/path-kit](https://docs.rs/path-kit) — API 参考（含模块级说明与中英 rustdoc）  
+- [CHANGELOG.md](./CHANGELOG.md) — 版本与变更记录
 
 ## 线程安全 / Thread safety
 
-当前未保证 `Send` / `Sync`，请勿跨线程共享 `Path`、`RRect`、`StrokeRec` 等类型。  
-`Send` / `Sync` are not guaranteed; do not share `Path`, `RRect`, `StrokeRec`, etc. across threads.
+当前未保证 `Send` / `Sync`，请勿跨线程共享 `Path`、`Matrix`、`RRect`、`StrokeRec`、`Paint` 等封装了 C++ 侧对象的类型。  
+`Send` / `Sync` are not guaranteed; do not share handles that wrap C++ objects (`Path`, `Matrix`, etc.) across threads.
 
 ## 安装 / Installation
 
@@ -38,12 +50,27 @@ path2.add_rect(&Rect::new(50.0, 50.0, 150.0, 150.0), Direction::Cw, RectCorner::
 
 let union = path_op(&path1, &path2, PathOp::Union).unwrap();
 
-// 批量运算
+// 批量运算（复用路径时可用 add_ref 避免 clone）
 let result = OpBuilder::new()
-    .add(path1.clone(), PathOp::Union)
-    .add(path2.clone(), PathOp::Union)
+    .add_ref(&path1, PathOp::Union)
+    .add_ref(&path2, PathOp::Union)
     .resolve()
     .unwrap();
+```
+
+### 矩阵与路径变换 / Matrix and path transform
+
+```rust
+use path_kit::{Matrix, Path};
+
+let mut path = Path::new();
+path.move_to(0.0, 0.0).line_to(100.0, 0.0).line_to(100.0, 100.0).close();
+
+let mut m = Matrix::identity();
+m.pre_translate(10.0, 5.0).pre_scale(2.0, 2.0);
+path.transform(&m);
+
+// 或保留原路径：let out = path.transformed(&m);
 ```
 
 ### 圆角矩形 RRect

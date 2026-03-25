@@ -48,7 +48,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **路径迭代**：`PathIter`, `PathVerbItem`（Move, Line, Quad, Conic, Cubic, Close）
 - **描边**：`StrokeRec`（fill, hairline, stroke）, `apply_to_path`
 - **类型**：`Path`, `Rect`, `Point`, `RRect`, `Radii`, `Direction`, `RectCorner`, `PathOp`
-- **PathEffect（实验性）**：`DashPathEffect`, `CornerPathEffect`（sk_sp 生命周期未完善，使用需注意）
 - **构建**：`cargo:rerun-if-changed` 优化增量编译
 
 ### Dependencies
