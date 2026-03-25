@@ -5,23 +5,59 @@ A Rust path operations library based on Skia PathOps and PathKit with safe API w
 
 ## 功能 / Features
 
-- **路径构建**：`Path`、`PathBuilder`（`SkPathBuilder`，`snapshot` / `detach`）；线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect（四角独立半径）
-- **路径布尔运算**：并集、交集、差集、异或；`OpBuilder` 批量运算（底层 `SkOpBuilder`）
-- **路径简化、包围盒**：`simplify`，`path.tight_bounds`，`pathops_tight_bounds`
-- **路径变换**：`Matrix`（与 `SkMatrix` 公开 API 对齐）、`path.transform` / `path.transformed`
-- **路径填充**：`PathFillType`（winding / even-odd / inverse 等）
-- **路径测量**：`PathMeasure`（长度、`pos_tan`、`get_segment` 等）
-- **路径迭代**：按动词遍历 Move/Line/Quad/Cubic/Close
-- **描边**：`StrokeRec`、`StrokeCap` / `StrokeJoin`；将路径转为描边轮廓
-- **绘图参数**：`Paint`、`PaintStyle`（`get_fill_path` 等，与 SkPaint 对齐的封装）
-- **路径效果**：`DashPathEffect`、`CornerPathEffect`（`SkPathEffect::filterPath` 封装，用于虚线 / 圆角等）
+- **路径构建 / Path construction**  
+  `Path`、`PathBuilder`（`SkPathBuilder`，`snapshot` / `detach`）；线段、二次/三次贝塞尔、矩形、椭圆、圆、圆角矩形、RRect（四角独立半径）。  
+  `Path` and `PathBuilder` (`SkPathBuilder`, `snapshot` / `detach`); lines, quadratic/cubic Béziers, rectangles, ovals, circles, rounded rects, RRects with per-corner radii.
 
-英文对照：same as above, plus `DashPathEffect` / `CornerPathEffect` wrapping Skia path effects.
+- **路径布尔运算 / Path boolean ops**  
+  并集、交集、差集、异或；`OpBuilder` 批量运算（底层 `SkOpBuilder`）。  
+  Union, intersect, difference, xor; batch ops via `OpBuilder` (backed by `SkOpBuilder`).
+
+- **路径简化、包围盒 / Simplify & bounds**  
+  `simplify`，`path.tight_bounds`，`pathops_tight_bounds`。  
+  Path simplification, tight bounds, and pathops tight-bounds helpers.
+
+- **路径变换 / Transforms**  
+  `Matrix`（与 `SkMatrix` 公开 API 对齐）、`path.transform` / `path.transformed`。  
+  `Matrix` aligns with public `SkMatrix` APIs; in-place and copying path transforms.
+
+- **路径填充 / Fill rules**  
+  `PathFillType`（winding / even-odd / inverse 等）。  
+  Winding, even-odd, inverse variants, and related fill types.
+
+- **路径测量 / Path measure**  
+  `PathMeasure`（长度、`pos_tan`、`get_segment` 等）。  
+  Length, position/tangent, segment extraction, contour navigation.
+
+- **路径迭代 / Iteration**  
+  按动词遍历 Move / Line / Quad / Cubic / Close。  
+  Iterate verbs and associated points (move, line, quad, cubic, close).
+
+- **描边 / Stroke**  
+  `StrokeRec`、`StrokeCap` / `StrokeJoin`；将路径转为描边轮廓。  
+  Stroke parameters and caps/joins; convert paths to stroked outlines.
+
+- **绘图参数 / Paint**  
+  `Paint`、`PaintStyle`（`get_fill_path` 等，与 SkPaint 对齐的封装）。  
+  Paint style and stroke parameters; fill-path extraction aligned with SkPaint.
+
+- **路径效果 / Path effects**  
+  `DashPathEffect`、`CornerPathEffect`（`SkPathEffect::filterPath` 封装，虚线 / 圆角等）。  
+  Dash and corner path effects via `SkPathEffect::filterPath` wrappers.
 
 ## 文档 / Documentation
 
-- [docs.rs/path-kit](https://docs.rs/path-kit) — API 参考（含模块级说明与中英 rustdoc）  
-- [CHANGELOG.md](./CHANGELOG.md) — 版本与变更记录
+- **[docs.rs/path-kit](https://docs.rs/path-kit)**  
+  托管的 API 参考：搜索符号、跳转至定义、查看各模块的 rustdoc（不少模块含中英说明）。  
+  Hosted API reference: search symbols, jump to definitions, and read module-level rustdoc (many modules are documented in Chinese and English).
+
+- **[CHANGELOG.md](./CHANGELOG.md)**  
+  按版本记录新增、变更与依赖说明；升级前建议阅读。  
+  Versioned list of notable changes and dependency notes; read before upgrading.
+
+- **源码 rustdoc**  
+  克隆仓库后运行 `cargo doc --open` 可在本地浏览（含 `pub(crate)` 以外的公开项）。  
+  After cloning, run `cargo doc --open` to browse docs locally for all public items.
 
 ## 线程安全 / Thread safety
 
